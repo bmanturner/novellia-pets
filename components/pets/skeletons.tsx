@@ -47,7 +47,7 @@ export function StatusSkeleton() {
           </div>
         ))}
       </div>
-      <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-2">
+      <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 @min-[1024px]:grid-cols-2">
         {[0, 1, 2, 3].map((section) => (
           <div key={section}>
             <div className={`${block} mb-3 h-7 w-48`} />

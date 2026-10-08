@@ -3,7 +3,7 @@ import type { PetCareSummary } from "@/db/models/care";
 import { Field } from "@/components/field";
 import { MicrochipStrip } from "@/components/microchip-strip";
 import { SpeciesMark } from "@/components/species-mark";
-import { Stamp } from "@/components/stamp";
+import { InkableStamp } from "@/components/inkable-stamp";
 import {
   formatAge,
   formatDate,
@@ -83,7 +83,7 @@ export function PetCard({
           <span className="sr-only">Next due: </span>
           <NextDueLine summary={summary} today={today} />
         </p>
-        <Stamp status={status} inked={inked} seed={pet.id} />
+        <InkableStamp status={status} inked={inked} petId={pet.id} />
       </div>
 
       <MicrochipStrip microchipId={pet.microchipId} />

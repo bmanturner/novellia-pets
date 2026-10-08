@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import type { CareStatus } from "@/db/models/care";
-import { Stamp } from "@/components/stamp";
+import { InkableStamp } from "@/components/inkable-stamp";
 
 /** The pet's care stamp; replays stamp-down while `?logged` is in the URL. */
 export function HeaderStamp({
@@ -13,5 +13,5 @@ export function HeaderStamp({
   seed: number;
 }) {
   const inked = useSearchParams().has("logged");
-  return <Stamp status={status} seed={seed} inked={inked} />;
+  return <InkableStamp status={status} petId={seed} inked={inked} />;
 }

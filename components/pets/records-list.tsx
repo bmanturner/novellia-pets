@@ -44,12 +44,14 @@ function RecordRow({
   typeName,
   today,
   filters,
+  highlighted,
 }: {
   record: MedicalRecord;
   petId: number;
   typeName: string;
   today: string;
   filters: Filters;
+  highlighted: boolean;
 }) {
   const summary = recordSummary(record);
   const status = statusLine(record, today);
@@ -57,7 +59,11 @@ function RecordRow({
     ? formatDate(record.occurredOn, today)
     : "date not recorded";
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-5 gap-y-2 px-4 py-4 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:px-5">
+    <li
+      id={`record-${record.id}`}
+      aria-current={highlighted ? "true" : undefined}
+      className={`scroll-mt-6 ${highlighted ? "bg-cover/[0.06] " : ""}grid grid-cols-[minmax(0,1fr)_auto] gap-x-5 gap-y-2 px-4 py-4 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:px-5`}
+    >
       <p className="col-span-2 text-[14px] leading-6 text-ink-muted sm:col-span-1">
         {record.occurredOn ? (
           <time dateTime={record.occurredOn}>
@@ -130,6 +136,13 @@ export async function PetRecords({
   if (records.length === 0) return <FirstRecord pet={pet} />;
 
   const filters = parseRecordFilters(query.type, query.q);
+  const recordParam = Array.isArray(query.record)
+    ? query.record[0]
+    : query.record;
+  const highlightId =
+    recordParam && /^[1-9]\d*$/.test(recordParam)
+      ? Number(recordParam)
+      : undefined;
   const queryMatches = filterMedicalRecords(records, { query: filters.q });
   const shown = filterMedicalRecords(queryMatches, { typeId: filters.type });
   const typeNames = Object.fromEntries(
@@ -204,7 +217,7 @@ export async function PetRecords({
           {[...years].map(([year, group]) => (
             <div key={year}>
               <h3 className={`mb-2 ${SMALL_CAPS}`}>{year}</h3>
-              <ul className="divide-y divide-rule rounded-xl border border-rule bg-page">
+              <ul className="divide-y divide-rule overflow-hidden rounded-xl border border-rule bg-page">
                 {group.map((record) => (
                   <RecordRow
                     key={record.id}
@@ -213,6 +226,7 @@ export async function PetRecords({
                     typeName={typeNames[record.typeId]}
                     today={today}
                     filters={filters}
+                    highlighted={record.id === highlightId}
                   />
                 ))}
               </ul>

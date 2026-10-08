@@ -197,6 +197,29 @@ components:
     textColor: "{colors.cover-ink}"
     rounded: "{rounded.tabs}"
     padding: "10px 8px 10px 16px"
+  chat-panel:
+    backgroundColor: "{colors.data-page}"
+    textColor: "{colors.ink}"
+    width: "400px"
+  chat-panel-head:
+    backgroundColor: "{colors.cover-navy}"
+    textColor: "{colors.cover-ink}"
+    height: "64px"
+    padding: "0 16px"
+  chat-confirmation:
+    backgroundColor: "{colors.data-page-tint}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.page}"
+    padding: "12px"
+  chat-composer-field:
+    backgroundColor: "{colors.data-page}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+  chat-send:
+    backgroundColor: "{colors.cover-navy}"
+    textColor: "{colors.cover-ink}"
+    rounded: "{rounded.control}"
+    size: "32px"
 ---
 
 # Design System: Novellia Pets
@@ -283,23 +306,25 @@ A navy-and-paper palette. The cover navy and security-paper blue-grey are the wo
 
 ## Layout
 
-A single centred column, `max-width: 1200px`, with 16 / 24 / 32px side padding at base / `sm` / `lg`, top padding 24px (40px at `lg`), and 64px bottom. The top bar is a 64px navy strip with the same container.
+A single centred column, `max-width: 1200px`, with 16 / 24 / 32px side padding at base / `sm` / `lg`, top padding 24px (40px at `lg`), and 64px bottom. The top bar is a 64px navy strip with the same container. Page layouts respond to the width of the app shell (a `@container` wrapper in the root layout), not the viewport, so a docked inquiry panel narrows the column and the grids below reflow to fit what remains; the breakpoints named below are container widths for the dashboard and pet status grids and viewport widths elsewhere.
 
-The dashboard stacks sections with 40px vertical gaps (`gap-y-10`) and 32px column gaps. Next due spans full width. Below it, at `lg` (1024px), a 2fr / 1fr grid holds the pet roster (left) and medications (right); below `lg` everything stacks, medications after the roster. The pet roster is one column and becomes two at `sm` (640px) with 16px gaps. A due row is a 2-column grid on mobile (days and stamp on top, pet and item next, date and action last) and expands to five columns at `md` (768px): 120px days, 22rem pet and item, flexible spacer, stamp, action.
+The dashboard stacks sections with 40px vertical gaps (`gap-y-10`) and 32px column gaps. Next due spans full width. Below it, once the app shell is 1024px wide, a 2fr / 1fr grid holds the pet roster (left) and medications (right); narrower, everything stacks, medications after the roster. The pet roster is one column and becomes two at `sm` (640px) with 16px gaps. A due row is a 2-column grid on mobile (days and stamp on top, pet and item next, date and action last) and expands to five columns at `md` (768px): 120px days, 22rem pet and item, flexible spacer, stamp, action.
 
 Spacing runs on a 4px base with working steps of 8, 12, 16, 24, 32 and 40px. Data pages pad 16px (20px from `sm` on pet pages); the first-run page pads 24px. Controls are 40px tall (32px for status tabs and row actions, 44px for page tabs).
 
-The pet page uses the same 1200px column: the back link, the header data page, the page tabs, then the tab's content 32px below. Status puts Next due full width, then a 2-column grid (from `lg`) of Allergies & conditions, Current medications, Vaccinations and Last vet visit with 40px row and 32px column gaps. Records stacks search, the type tabs, and year-grouped lists; each record row is a 96px date column, the content, and right-aligned actions from `sm`. Full-page forms (a hard load of a form URL) use a 640px column.
+The pet page uses the same 1200px column: the back link, the header data page, the page tabs, then the tab's content 32px below. Status puts Next due full width, then a 2-column grid (once the app shell is 1024px wide) of Allergies & conditions, Current medications, Vaccinations and Last vet visit with 40px row and 32px column gaps. Records stacks search, the type tabs, and year-grouped lists; each record row is a 96px date column, the content, and right-aligned actions from `sm`. Full-page forms (a hard load of a form URL) use a 640px column.
+
+The inquiry panel is a 400px column (`--chat-panel-width`) on the right edge. From 1280px it docks: the page column and the top bar's content take 400px of right padding, so nothing is covered. From 640px to 1279px it overlays the page. Below 640px it is a full-screen sheet and the page behind stops scrolling.
 
 ## Elevation & Depth
 
-Flat and ruled. Depth comes from the paper-to-page step (`#eaeff6` to `#ffffff`), 1px borders, tonal tint strips (microchip strip, photo box) and one reversed navy row. There are no shadows at rest. Two transient surfaces float: the toast, `0 8px 24px rgb(20 33 72 / 0.28)`, and the dialog, `0 24px 64px rgb(20 33 72 / 0.35)` over a Cover Navy Deep scrim at 55%. Both shadows are navy-tinted, never black.
+Flat and ruled. Depth comes from the paper-to-page step (`#eaeff6` to `#ffffff`), 1px borders, tonal tint strips (microchip strip, photo box) and one reversed navy row. There are no shadows at rest. Three transient surfaces float: the toast, `0 8px 24px rgb(20 33 72 / 0.28)`, the dialog, `0 24px 64px rgb(20 33 72 / 0.35)` over a Cover Navy Deep scrim at 55%, and the inquiry panel in overlay mode only, a left-edge shadow `-16px 0 40px rgb(20 33 72 / 0.18)`. Docked at 1280px and up, the panel has no shadow and is separated by a 1px `rule` edge. All shadows are navy-tinted, never black.
 
 Stamps use `mix-blend-mode: multiply` at 0.92 opacity and a faint 6% tint of their ink, so they read as ink pressed into paper instead of a chip laid on top.
 
 ### Named Rules
 
-**The Flat-On-Paper Rule.** Surfaces carry no shadow at rest. Only the transient toast and an open dialog are lifted.
+**The Flat-On-Paper Rule.** Surfaces carry no shadow at rest. Only the transient toast, an open dialog and an overlaying (not docked) inquiry panel are lifted.
 
 ## Shapes
 
@@ -309,7 +334,7 @@ Gentle, small radii, like stationery rather than app chrome: 12px for data pages
 
 ### Stamp
 
-The signature object. Real text in uppercase 12px / 800, tracked 0.14em, in a 3px double border at the current ink colour, 3px radius, 4px x 10px padding, rotated by the per-pet tilt, 6% ink tint, multiply-blended. Three states only: Overdue (red), Due soon (violet), Up to date (navy). On the navy cover it is un-tinted and drawn in the on-cover inks (`#ffb3bf`, `#d9ccff`, `#f3f5fb`). When a dose is logged the affected pet's stamp replays **stamp-down**: 240ms, `cubic-bezier(0.16, 1, 0.3, 1)`, scales 1.35 to 0.96 to 1 while fading in. Prefers-reduced-motion collapses it.
+The signature object. Real text in uppercase 12px / 800, tracked 0.14em, in a 3px double border at the current ink colour, 3px radius, 4px x 10px padding, rotated by the per-pet tilt, 6% ink tint, multiply-blended. Three states only: Overdue (red), Due soon (violet), Up to date (navy). On the navy cover it is un-tinted and drawn in the on-cover inks (`#ffb3bf`, `#d9ccff`, `#f3f5fb`). When a dose is logged, or the inquiry panel confirms a change to a pet's records, that pet's stamp replays **stamp-down**: 240ms, `cubic-bezier(0.16, 1, 0.3, 1)`, scales 1.35 to 0.96 to 1 while fading in (and once more if the refreshed status lands just after). Prefers-reduced-motion collapses it.
 
 ### Photo box
 
@@ -348,7 +373,7 @@ A Label-style label above a 40px white input (1px `rule`, 6px radius, 15px), opt
 - **Primary** (Cover Navy fill, Cover Ink text, 6px radius, 40px tall, 14px / 600, 16px side padding, optional 16px icon): hover darkens to Cover Navy Deep over 150ms. Used for "Add pet" in the first-run page.
 - **On cover** (Cover Ink fill, navy text): "Add pet" in the top bar and the log action in an urgent row; hover to white; focus ring in gold foil.
 - **Secondary** (white fill, navy text, 1px navy at 25% border): the log action in ordinary due rows, Edit pet, Cancel; hover raises the border to 50% and tints the fill.
-- **Danger** (Danger fill, white text, the Primary's shape): only the confirm button inside a delete dialog; label names the act ("Delete record", "Delete Hooch") and reads "Deleting…" while pending.
+- **Danger** (Danger fill, white text, the Primary's shape): only the confirm button inside a delete confirmation, in the dialog or in the inquiry panel (where it is 32px tall, 13px); label names the act ("Delete record", "Delete Hooch") and reads "Deleting…" while pending in the dialog.
 - **Danger outline** (white fill, Danger text, Danger at 40% border, trash icon): the button that opens a pet's delete confirmation. In record rows it is a compact 32px, 13px text-only Delete beside Edit.
 - **Focus:** 2px `focus` outline, 2px offset, 4px radius on paper; gold foil when on the cover.
 
@@ -358,11 +383,25 @@ A Label-style label above a 40px white input (1px `rule`, 6px radius, 15px), opt
 
 ### Toast
 
-Bottom-right (full-width bottom on mobile), Cover Navy fill, 8px radius, 14px Cover Ink text, a gold-foil stamp icon, and a 32px dismiss button. Enters with `toast-in` (200ms, same expo ease-out, 8px rise). It confirms a logged record or a saved, updated or deleted pet or record, auto-dismisses after 6 seconds, and removes its URL flag (`logged` or `notice`) so a reload doesn't repeat it.
+Bottom-right (full-width bottom on mobile), Cover Navy fill, 8px radius, 14px Cover Ink text, a gold-foil stamp icon, and a 32px dismiss button. Enters with `toast-in` (200ms, same expo ease-out, 8px rise). It confirms a logged record or a saved, updated or deleted pet or record, auto-dismisses after 6 seconds, and removes its URL flag (`logged` or `notice`) so a reload doesn't repeat it. From 640px it sits 24px left of an open inquiry panel rather than under it. Changes confirmed inside the panel do not raise a toast; the panel's own line and the re-inked stamp are the confirmation.
+
+### Inquiry panel
+
+The household's question desk: a 400px column that answers from the records and, when asked, changes them. Present on every page; absent entirely when chat is not configured.
+
+- **Ask button:** in the top bar, on the cover: 40px, 6px radius, 1px Cover Ink at 30% border, Cover Ink 14px / 600 label with a 16px speech icon (icon only below `sm`); open state fills Cover Ink at 15%; hover 10%. Gold-foil focus ring. It carries `aria-expanded`; closing returns focus to it. Opens as a 200ms `chat-panel-in` slide (24px from the right, expo ease-out).
+- **Placement:** docked from 1280px (page column and top bar content give up 400px), overlay with the navy-tinted edge shadow from 640px to 1279px, full-screen sheet below 640px.
+- **Head:** a 64px Cover Navy bar that continues the top bar's cover band, with a 1px Cover Ink 15% seam on its left edge, "Ask" (16px / 700) beside a 13px Cover Muted "Not saved · reload clears", and a 32px close button. Below it the body is a white data page with a 1px `rule` left edge.
+- **Transcript:** each user question is an entry in Ink, 15px / 24px, semibold, set off from the previous exchange by a 1px `rule` top border and 20px of padding; no bubbles. The answer is plain Ink 15px / 24px text and markdown. Sources close an answer under a ruled **FROM RECORDS** caption (Label style) as a list of record links: 14px / 600, underlined in Cover Navy, with a 13px muted line of pet, type and date. A link opens that pet's Records page with the cited row tinted (Cover Navy at 6%, `aria-current`).
+- **Confirmation:** the only boxed object in the transcript: a 12px-radius `data-page-tint` box with a 1px `rule` border and 12px padding, holding one sentence of what will change and two 32px buttons: a Primary confirm naming the act, or Danger for a delete, and a Secondary Cancel. It resolves to a one-line past-tense statement with a navy check and a "View" link, or "Cancelled. Nothing changed."; a failure is a 13px Danger line with its alert icon.
+- **Activity and error:** a running tool shows a spinner with a 13px muted phrase ("Working on it…"). A failed request shows an alert icon, "Couldn't reach the assistant." and a Secondary **Try again**. A floating **Latest** secondary button appears when the reader has scrolled up during a stream.
+- **Empty state:** a 22px / 700 "Ask about your pets" over three suggested questions as ruled rows (muted corner-arrow icon, 14px Ink, tint on hover), and a 13px muted line that answers come from records and are not a diagnosis.
+- **Composer:** a ruled footer holding a framed field (1px `rule`, 6px radius, hover `rule-strong`, Focus Blue border and ring on focus) with an auto-growing textarea (15px; 16px on mobile), an "About" context chip on the bottom left (species mark, pet name, a 24px remove button; tint fill, 1px `rule`) and a 32px send button (Cover Navy, arrow icon) that becomes a Secondary stop button while a reply streams.
+- **Re-ink signal:** when a chat-confirmed change touches a pet's records, that pet's stamp wherever it is on the page replays stamp-down. There is no toast.
 
 ### Empty and first-run states
 
-Dashed `rule-strong` border for "No pets match these filters" and "No records match these filters", each with a Clear filters link. A blank data page with a dashed photo placeholder and the three stamps shows when no pets exist. A pet with no records shows "No records yet for {name}" with one secondary button per record type. The all-clear row pairs an Up to date stamp (tilted -3 degrees) with a sentence stating the next due item.
+Dashed `rule-strong` border for "No pets match these filters" and "No records match these filters", each with a Clear filters link. A blank data page with a dashed photo placeholder and the three stamps shows when no pets exist. A pet with no records shows "No records yet for {name}" with one secondary button per record type. The all-clear row pairs an Up to date stamp (tilted -3 degrees) with a sentence stating the next due item. The inquiry panel's empty state is a list of suggested questions (see Inquiry panel).
 
 ## Do's and Don'ts
 
@@ -381,9 +420,10 @@ Dashed `rule-strong` border for "No pets match these filters" and "No records ma
 
 - **Don't** use stat-card counts or charts to summarise status; counts sit as muted numerals beside headings and tabs.
 - **Don't** add paw-print decoration, guilloche patterns, or stamps used as ornament; a stamp must be a real status.
-- **Don't** reach for a modal outside the dialog pattern: add and edit dialogs are route-backed (their URL also works as a full page), the only route-less dialog is a delete confirmation, and confirmation after an action is the toast.
+- **Don't** reach for a modal outside the dialog pattern: add and edit dialogs are route-backed (their URL also works as a full page), the only route-less dialog is a delete confirmation, and confirmation after an action is the toast. The inquiry panel is not a modal: it leaves the page usable, and its confirmations live in its transcript.
 - **Don't** colour buttons, headings or backgrounds in the status inks, or use red and violet for anything but state; the one exception is red as Danger on destructive actions and form errors.
 - **Don't** use gold as a fill or border on a data page.
-- **Don't** put a chat or assistant surface on the dashboard; it is absent until a backend exists.
+- **Don't** show the inquiry panel unless chat is configured; when it is, it is one global panel opened from the top bar's Ask button, never a floating bubble, a dashboard card or a per-page widget.
+- **Don't** box or bubble transcript messages; the pending confirmation is the only boxed object in the panel.
 - **Don't** add resting drop shadows or heavy rounding to cards.
 - **Don't** treat the hard-coded values in the build (`#d9ccff` on-cover due-soon stamp ink, `#f1dfae` text selection) as tokens for new work; they are carried in the build as one-offs.

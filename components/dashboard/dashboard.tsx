@@ -60,8 +60,8 @@ export async function Dashboard({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-10 @min-[1024px]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="@min-[1024px]:col-span-2">
           <NextDue
             items={dueItems}
             nextBeyond={nextBeyond}
@@ -69,10 +69,10 @@ export async function Dashboard({
             scope="household"
           />
         </div>
-        <div className="lg:col-start-2 lg:row-start-2">
+        <div className="@min-[1024px]:col-start-2 @min-[1024px]:row-start-2">
           <Medications medications={medications} today={today} />
         </div>
-        <div className="lg:col-start-1 lg:row-start-2">
+        <div className="@min-[1024px]:col-start-1 @min-[1024px]:row-start-2">
           <PetRoster
             matching={matching}
             totalCount={all.length}

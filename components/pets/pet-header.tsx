@@ -3,7 +3,9 @@ import Link from "next/link";
 import { Field } from "@/components/field";
 import { MicrochipStrip } from "@/components/microchip-strip";
 import { SpeciesMark } from "@/components/species-mark";
+import { ChatPetContext } from "@/lib/chat/chat-provider";
 import { formatAge, formatSex } from "@/lib/format";
+import { speciesArtUrl } from "@/lib/species-art";
 import { loadPet, loadPetCare, loadPetRecords } from "@/lib/pet-data";
 import { routes } from "@/lib/routes";
 import { HeaderStamp } from "./header-stamp";
@@ -24,6 +26,14 @@ export async function PetHeaderSection({
 
   return (
     <>
+      <ChatPetContext
+        pet={{
+          id: pet.id,
+          name: pet.name,
+          species: pet.species,
+          art: speciesArtUrl(pet.species.id),
+        }}
+      />
       <Link
         href={routes.home}
         className="inline-flex items-center gap-1.5 text-[14px] text-ink-muted hover:text-ink"

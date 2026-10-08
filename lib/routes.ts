@@ -28,6 +28,9 @@ export const routes = {
     `/pets/${petId}/records/new?${new URLSearchParams({ type: typeId, title, ...(from ? { from } : {}) })}`,
   petRecords: (petId: number, filters: RecordFilterParams = {}) =>
     `/pets/${petId}/records${filterQuery(filters)}`,
+  /** Records page scrolled to one record, highlighted. */
+  petRecord: (petId: number, recordId: number) =>
+    `/pets/${petId}/records?record=${recordId}#record-${recordId}`,
   /** `type` and `q` are the Records filters to return to after saving. */
   editRecord: (
     petId: number,

@@ -24,6 +24,10 @@
     "db:types": "kysely-codegen --dialect sqlite --camel-case --out-file db/types.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.77",
+    "@ai-sdk/react": "^4.0.137",
+    "@modelcontextprotocol/server": "^2.3.1",
+    "ai": "^7.0.134",
     "better-sqlite3": "^12.11.1",
     "kysely": "^0.29.6",
     "lucide-react": "^1.53.0",
@@ -34,6 +38,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@ai-sdk/provider": "^4.0.25",
+    "@modelcontextprotocol/client": "^2.3.1",
     "@next/env": "16.4.0",
     "@tailwindcss/turbopack": "^4",
     "@types/better-sqlite3": "^9.6.0",

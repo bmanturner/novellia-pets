@@ -28,7 +28,7 @@ export function Toast({
   return (
     <div
       role="status"
-      className="pointer-events-none fixed inset-x-4 bottom-4 z-50 flex justify-center sm:inset-x-auto sm:right-6 sm:bottom-6"
+      className="pointer-events-none fixed inset-x-4 bottom-4 z-50 flex justify-center sm:inset-x-auto sm:right-[calc(var(--chat-inset,0px)+24px)] sm:bottom-6"
     >
       {open && (
         <p className="pointer-events-auto flex animate-[toast-in_200ms_var(--ease-out-expo)_both] items-center gap-3 rounded-lg bg-cover py-2.5 pr-2 pl-4 text-[14px] text-cover-ink shadow-[0_8px_24px_rgb(20_33_72/0.28)]">

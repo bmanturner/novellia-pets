@@ -28,7 +28,7 @@ Records that do work instead of sitting in an archive. Due dates turn history in
 - Owners log visits, vaccinations and medications at home. They pull records up at the vet's front desk, at boarding check-in, or for a sitter. _[Inferred: those moments imply phone use.]_
 - The vet summary is printed or shown on screen to a third party.
 - This MVP is a take-home for Novellia:
-  - Reviewers run it locally (`npm run setup`), possibly without an OpenRouter key.
+  - Reviewers run it locally (`npm run setup`), possibly without an Anthropic API key.
   - The review session includes pairing on one or two new features, so the data model and code boundaries must be explainable and easy to extend.
 
 ## Capabilities and Constraints
@@ -57,9 +57,12 @@ Not in the MVP: procedures & surgeries, lab results.
 2. **Vet summary.** One printable summary of a pet's history for a new vet, boarding facility, sitter or emergency room.
 3. **Chat agent.**
    - Answers questions about the owner's pets from their records, and also answers general pet-care questions with clear not-a-vet framing.
-   - Read-only: it doesn't create or change records.
-   - Runs through OpenRouter.
-   - When OpenRouter isn't configured, chat doesn't appear anywhere in the UI.
+   - Can do anything the app can: look things up, add, change and delete pets and records. Every change waits for the owner to confirm it.
+   - Navigates the app for the owner ("show me Marley's details" opens Marley's page).
+   - Conversations aren't saved; a reload starts fresh.
+   - Runs on Anthropic's Claude models through the Anthropic API.
+   - When no Anthropic API key is configured, chat doesn't appear anywhere in the UI.
+4. **MCP server.** The same lookups and changes are available to MCP clients (Claude, IDEs) on this machine. Changes need the client to confirm with the owner first; clients that can't ask can only read.
 
 **Terminology:** pet, household, medical record, the record type names above, and the care statuses overdue / due soon / up to date.
 
@@ -88,7 +91,7 @@ Not in the MVP: procedures & surgeries, lab results.
   - **Due soon:** due within the next 30 days. That's enough lead time to book a vet; 7 days is too late to act on and 90 is noise. It's one constant, not a user setting.
   - **Up to date:** nothing overdue or due soon.
   - Only the newest record of a recurring item (same pet, type and title) carries a live due date: logging this year's rabies shot clears last year's. Records that have ended don't produce due items.
-  - The UI keeps titles consistent with a "log next dose" action on due items and title suggestions from the pet's past records.
+  - The UI keeps titles consistent with a "log dose" action on due items and title suggestions from the pet's past records.
   - A medication's due date is its refill or recheck date, not each dose. Dose reminders need notifications, which are out of scope.
   - "Today" is the server's local date in the MVP. A deployed version would take it from the household's time zone.
 - **Find and filter:**
@@ -100,7 +103,7 @@ Not in the MVP: procedures & surgeries, lab results.
   - Pets belong to a household; records belong to pets.
   - All data access is scoped through one current-household lookup. Until auth exists it returns a single default household, created automatically if missing.
   - Adding auth replaces that lookup with a session and adds users and household membership, so a partner or sitter shares pets through membership instead of re-keying data.
-  - Chat reads through the same scoped data access.
+  - Chat and the MCP server go through the same scoped data access, and only accept requests from this machine.
 
 ## Brand Commitments
 

@@ -31,6 +31,26 @@ SQLite via [Kysely](https://kysely.dev). Migrations and seeds run through [`kyse
 
 The app's Kysely instance (`db/index.ts`) uses `CamelCasePlugin`: query with `camelCase`, store as `snake_case`. Migrations run without the plugin, so write table and column names in `snake_case` there. `db/types.ts` is generated; don't edit it.
 
+## Chat agent and MCP server
+
+Every query and change the app makes is defined once in [`lib/tools/registry.ts`](lib/tools/registry.ts) and exposed two ways. Both endpoints answer only requests from `localhost`: other hosts and cross-site origins get a 403.
+
+**Chat** (`POST /api/chat`) runs a [Vercel AI SDK](https://ai-sdk.dev) agent on Anthropic's Claude models through the [Anthropic API](https://docs.anthropic.com). Set `ANTHROPIC_API_KEY` in `.env` to enable it; without a key the route returns 404 and no chat UI renders anywhere. `ANTHROPIC_MODEL` picks another Claude model (default `claude-haiku-5-5`). Conversations live in memory only.
+
+- **UI:** the Ask button in the top bar opens a docked panel ([`components/chat/`](components/chat)). From 1280px wide it pushes the page column; between 640 and 1279px it slides over the page; below 640px it opens as a full-screen sheet. Page layouts that change at 1024px use container queries on the app shell (`@min-[1024px]:`), not viewport breakpoints.
+- **Page context:** pet pages publish their pet with `<ChatPetContext>`, and requests send its `petId` so "this pet" resolves.
+- **Approvals:** every change waits for the user to approve it. The server streams the confirmation sentence from the registry's `confirmMessage` as a `data-confirm` part ([`lib/chat/confirmations.ts`](lib/chat/confirmations.ts)).
+- **Chat-only tools:** the agent cites the records an answer used with `citeRecords`, and opens pages with `navigate`, which runs in the browser.
+- **Client state:** client components use `usePetsChat()` and `useChatPanel()` inside `<ChatProvider>` ([`lib/chat/chat-provider.tsx`](lib/chat/chat-provider.tsx)).
+
+**MCP** (`/api/mcp`, Streamable HTTP, no auth) serves the same tools, except the chat-only `navigate` and `citeRecords`, to MCP clients on this machine:
+
+```bash
+claude mcp add --transport http novellia-pets http://localhost:3000/api/mcp
+```
+
+Each write asks the client to confirm through elicitation before it runs. Clients that don't support elicitation can still read but can't write.
+
 ## Tests
 
 [Vitest](https://vitest.dev) runs data access and logic tests (`*.test.ts`, colocated with the code under test).

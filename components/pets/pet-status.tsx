@@ -43,7 +43,7 @@ export async function PetStatus({
         nextBeyond={care.nextBeyond}
         today={today}
       />
-      <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-2">
+      <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 @min-[1024px]:grid-cols-2">
         <Conditions conditions={care.conditions} />
         <Medications medications={care.medications} today={today} />
         <Vaccinations vaccinations={care.vaccinations} today={today} />

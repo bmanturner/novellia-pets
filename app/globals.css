@@ -106,6 +106,43 @@
   }
 }
 
+:root {
+  --chat-panel-width: 400px;
+}
+
+/* The inquiry panel slides in from the right edge it docks to. */
+@keyframes chat-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Wide screens dock the panel: the page and top bar make room for it. */
+@media (min-width: 1280px) {
+  html[data-chat-panel="open"] :is([data-app-shell], header[data-top-bar]) {
+    padding-right: var(--chat-panel-width);
+  }
+}
+
+/* Anything fixed to the right (toasts) steps clear of an open panel. */
+@media (min-width: 640px) {
+  html[data-chat-panel="open"] {
+    --chat-inset: var(--chat-panel-width);
+  }
+}
+
+/* On phones the panel is a full-screen sheet; the page behind stays put. */
+@media (max-width: 639.98px) {
+  html[data-chat-panel="open"] {
+    overflow: hidden;
+  }
+}
+
 html:has(dialog[open]) {
   overflow: hidden;
 }

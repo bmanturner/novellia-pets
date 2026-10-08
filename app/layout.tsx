@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Overpass_Mono, Public_Sans } from "next/font/google";
 import { Suspense } from "react";
+import { ChatPanel } from "@/components/chat/chat-panel";
 import { NoticeToast } from "@/components/notice-toast";
 import { TopBar } from "@/components/top-bar";
+import { chatEnabled } from "@/lib/chat/agent";
+import { ChatProvider } from "@/lib/chat/chat-provider";
 import "./globals.css";
 
 const publicSans = Public_Sans({
@@ -28,18 +31,28 @@ export default function RootLayout({
   children: React.ReactNode;
   modal: React.ReactNode;
 }) {
+  const chat = chatEnabled();
+  const content = (
+    <>
+      <TopBar chat={chat} />
+      <div data-app-shell className="@container flex flex-1 flex-col">
+        {children}
+      </div>
+      {modal}
+      <Suspense fallback={null}>
+        <NoticeToast />
+      </Suspense>
+      {chat && <ChatPanel />}
+    </>
+  );
+
   return (
     <html
       lang="en"
       className={`${publicSans.variable} ${overpassMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <TopBar />
-        {children}
-        {modal}
-        <Suspense fallback={null}>
-          <NoticeToast />
-        </Suspense>
+        {chat ? <ChatProvider>{content}</ChatProvider> : content}
       </body>
     </html>
   );

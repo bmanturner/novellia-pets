@@ -8,7 +8,7 @@ import { formatDate, formatLongDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
 const LOG_LABEL: Partial<Record<MedicalRecordTypeId, string>> = {
-  vaccination: "Log next dose",
+  vaccination: "Log dose",
   medication: "Log refill",
   visit: "Log visit",
 };
@@ -48,7 +48,7 @@ function DueRow({
     <li
       className={[
         "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 sm:px-5",
-        "md:grid-cols-[120px_minmax(0,22rem)_minmax(0,1fr)_auto_auto] md:gap-x-6",
+        "md:grid-cols-[120px_minmax(0,22rem)_minmax(max-content,1fr)_auto_auto] md:gap-x-6",
         urgent ? "bg-cover text-cover-ink" : "",
       ].join(" ")}
     >

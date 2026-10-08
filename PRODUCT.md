@@ -28,7 +28,7 @@ Records that do work instead of sitting in an archive. Due dates turn history in
 - Owners log visits, vaccinations and medications at home. They pull records up at the vet's front desk, at boarding check-in, or for a sitter. _[Inferred: those moments imply phone use.]_
 - The vet summary is printed or shown on screen to a third party.
 - This MVP is a take-home for Novellia:
-  - Reviewers run it locally (`npm run setup`), possibly without an Anthropic API key.
+  - Reviewers try the deployed demo on Vercel, or run it locally (`npm run setup`), possibly without an Anthropic API key.
   - The review session includes pairing on one or two new features, so the data model and code boundaries must be explainable and easy to extend.
 
 ## Capabilities and Constraints
@@ -62,7 +62,7 @@ Not in the MVP: procedures & surgeries, lab results.
    - Conversations aren't saved; a reload starts fresh.
    - Runs on Anthropic's Claude models through the Anthropic API.
    - When no Anthropic API key is configured, chat doesn't appear anywhere in the UI.
-4. **MCP server.** The same lookups and changes are available to MCP clients (Claude, IDEs) on this machine. Changes need the client to confirm with the owner first; clients that can't ask can only read.
+4. **MCP server.** The same lookups and changes are available to MCP clients (Claude, IDEs), locally or against the deployed demo. Changes need the client to confirm with the owner first; clients that can't ask can only read.
 
 **Terminology:** pet, household, medical record, the record type names above, and the care statuses overdue / due soon / up to date.
 
@@ -103,13 +103,13 @@ Not in the MVP: procedures & surgeries, lab results.
   - Pets belong to a household; records belong to pets.
   - All data access is scoped through one current-household lookup. Until auth exists it returns a single default household, created automatically if missing.
   - Adding auth replaces that lookup with a session and adds users and household membership, so a partner or sitter shares pets through membership instead of re-keying data.
-  - Chat and the MCP server go through the same scoped data access, and only accept requests from this machine.
+  - Chat and the MCP server go through the same scoped data access. They only accept requests addressed to this app (localhost, or the Vercel deployment's own domains) and reject cross-site browser requests.
 
 ## Brand Commitments
 
 - The product name is **Novellia Pets** (from the brief).
 - No logo, palette, typography or voice guidelines have been provided, and none should be implied.
-- The current create-next-app styling (Geist, black/white tokens) is boilerplate, not a commitment.
+- The visual system ("The Vet Passport": Public Sans and Overpass Mono, documented in `DESIGN.md`) is this project's own design, not a Novellia brand commitment.
 
 ## Evidence on Hand
 

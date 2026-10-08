@@ -1,6 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Novellia Pets
 
-## Getting Started
+Track your household's pets and their medical records, see what care is overdue or due soon, and ask a Claude-powered assistant about them in plain language.
+
+**Live demo:** _add the Vercel production URL here_ (see [Deploy on Vercel](#deploy-on-vercel))
+
+## What to try
+
+The demo data is a fictional household of famous movie pets. Mr. Jinx is overdue for care, Hooch and Toto are due soon, and the rest are up to date.
+
+- **Dashboard:** care that's overdue or due soon across all pets, current medications, and the pet roster. Search by name, breed or microchip number; filter by species and care status. Filters live in the URL, so they survive a refresh and can be shared.
+- **Pets:** add, edit and delete pets. A pet's page has three tabs:
+  - **Status:** allergies and conditions, current medications, vaccinations and the last vet visit.
+  - **Records:** full history; filter by type and search titles and notes.
+  - **Profile:** species, breed, sex, age, microchip and notes.
+- **Medical records:** vaccinations, medications, vet visits, and allergies or conditions. Each has a date, an optional end date and an optional due date. Logging this year's rabies shot clears last year's due date.
+- **Chat:** open **Ask** in the top bar. Try:
+  - "Who's overdue for anything?"
+  - "What medications is Marley on?"
+  - "Log a rabies vaccine for Marley today, due again in a year." The assistant asks you to approve every change before making it.
+
+> [!NOTE]
+> Chat needs an Anthropic API key. Without one, the app works the same but chat doesn't appear anywhere.
+
+## Getting started
 
 Requires Node.js 24 or newer (`.nvmrc` pins 24; run `nvm use`).
 
@@ -10,15 +32,50 @@ npm run setup   # create .env from .env.example, migrate, and seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). To enable chat, set `ANTHROPIC_API_KEY` in `.env` and restart the dev server.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+To get the original demo data back, run `npm run db:reset`.
 
-## Database
+## How it's built
 
-SQLite via [Kysely](https://kysely.dev). Migrations and seeds run through [`kysely-ctl`](https://github.com/kysely-org/kysely-ctl).
+- **App:** [Next.js](https://nextjs.org) 16 App Router, React 19, Server Components and Server Actions, [Tailwind CSS](https://tailwindcss.com) 4.
+- **Data:** SQLite through [Kysely](https://kysely.dev) (`better-sqlite3`), with [Zod](https://zod.dev) validating inputs.
+- **Chat:** [Vercel AI SDK](https://ai-sdk.dev) agent on Anthropic's Claude models.
+- **MCP:** [`@modelcontextprotocol/server`](https://github.com/modelcontextprotocol/typescript-sdk), served over Streamable HTTP.
 
-`npm run setup` creates `.env` (`DATABASE_URL=.data/app.db`) and migrates and seeds the database.
+Every query and change is defined once, in [`lib/tools/registry.ts`](lib/tools/registry.ts), on top of the data models in `db/models/`. The chat agent and the MCP server both use that registry, so a tool added there is available to both.
+
+```text
+app/              routes, Server Actions (app/pets/actions.ts), /api/chat, /api/mcp
+components/       UI, grouped by area (dashboard, pets, forms, chat)
+db/models/        data access, always scoped to the current household
+db/migrations/    schema and reference data (species, record types)
+db/seeds/         fictional demo data
+lib/tools/        the shared tool registry
+lib/chat/         chat agent and client state
+lib/mcp/          MCP server
+```
+
+**Adding things:**
+
+- **A query or change for chat and MCP:** add a tool to `lib/tools/registry.ts`. Write tools also need a `confirmMessage`.
+- **A species or record type:** write a migration that inserts the row. A record type also needs its details schema and form fields.
+- **A schema change:** run `npm run db:make -- <name>`, then register the migration in [`db/bootstrap.ts`](db/bootstrap.ts). The deployed app and the tests migrate from that list, not from the folder.
+
+## Scope and limitations
+
+- **No authentication.** The app acts as a single household. All data access goes through one current-household lookup, so auth would replace that lookup with a session.
+- **Dates are calendar dates** (`YYYY-MM-DD`). "Today" is the server's local date.
+- **Chat conversations aren't saved.** Reloading the page starts a new one.
+- **The deployed demo doesn't keep its data.** See [Deploy on Vercel](#deploy-on-vercel).
+
+Product decisions and their reasons are in [`PRODUCT.md`](PRODUCT.md); the visual system ("Vet Passport") is in [`DESIGN.md`](DESIGN.md).
+
+## Development
+
+### Database
+
+`npm run setup` creates `.env` (`DATABASE_URL=.data/app.db`), migrates, and seeds. Migrations and seeds run through [`kysely-ctl`](https://github.com/kysely-org/kysely-ctl).
 
 | Script                      | Purpose                                      |
 | --------------------------- | -------------------------------------------- |
@@ -31,38 +88,18 @@ SQLite via [Kysely](https://kysely.dev). Migrations and seeds run through [`kyse
 
 The app's Kysely instance (`db/index.ts`) uses `CamelCasePlugin`: query with `camelCase`, store as `snake_case`. Migrations run without the plugin, so write table and column names in `snake_case` there. `db/types.ts` is generated; don't edit it.
 
-## Chat agent and MCP server
+### Tests
 
-Every query and change the app makes is defined once in [`lib/tools/registry.ts`](lib/tools/registry.ts) and exposed two ways. Both endpoints answer only requests from `localhost`: other hosts and cross-site origins get a 403.
-
-**Chat** (`POST /api/chat`) runs a [Vercel AI SDK](https://ai-sdk.dev) agent on Anthropic's Claude models through the [Anthropic API](https://docs.anthropic.com). Set `ANTHROPIC_API_KEY` in `.env` to enable it; without a key the route returns 404 and no chat UI renders anywhere. `ANTHROPIC_MODEL` picks another Claude model (default `claude-haiku-5-5`). Conversations live in memory only.
-
-- **UI:** the Ask button in the top bar opens a docked panel ([`components/chat/`](components/chat)). From 1280px wide it pushes the page column; between 640 and 1279px it slides over the page; below 640px it opens as a full-screen sheet. Page layouts that change at 1024px use container queries on the app shell (`@min-[1024px]:`), not viewport breakpoints.
-- **Page context:** pet pages publish their pet with `<ChatPetContext>`, and requests send its `petId` so "this pet" resolves.
-- **Approvals:** every change waits for the user to approve it. The server streams the confirmation sentence from the registry's `confirmMessage` as a `data-confirm` part ([`lib/chat/confirmations.ts`](lib/chat/confirmations.ts)).
-- **Chat-only tools:** the agent cites the records an answer used with `citeRecords`, and opens pages with `navigate`, which runs in the browser.
-- **Client state:** client components use `usePetsChat()` and `useChatPanel()` inside `<ChatProvider>` ([`lib/chat/chat-provider.tsx`](lib/chat/chat-provider.tsx)).
-
-**MCP** (`/api/mcp`, Streamable HTTP, no auth) serves the same tools, except the chat-only `navigate` and `citeRecords`, to MCP clients on this machine:
-
-```bash
-claude mcp add --transport http novellia-pets http://localhost:3000/api/mcp
-```
-
-Each write asks the client to confirm through elicitation before it runs. Clients that don't support elicitation can still read but can't write.
-
-## Tests
-
-[Vitest](https://vitest.dev) runs data access and logic tests (`*.test.ts`, colocated with the code under test).
+[Vitest](https://vitest.dev) runs data access and logic tests (`*.test.ts`, next to the code they test).
 
 ```bash
 npm test             # run once
 npm run test:watch   # watch mode
 ```
 
-Tests use the real `db` from `@/db` against an in-memory SQLite database; `.data/app.db` is never touched. Before every test, `test/setup-db.ts` rolls back and re-applies all migrations, so each test starts from an empty schema and every migration's `down()` is exercised.
+Tests use the real `db` from `@/db` against an in-memory SQLite database; `.data/app.db` is never touched. Before every test, `test/setup-db.ts` rolls back and re-applies all migrations, so each test starts from an empty schema and every migration's `down()` runs.
 
-## Code Quality
+### Code quality
 
 | Script                 | Purpose                                               |
 | ---------------------- | ----------------------------------------------------- |
@@ -71,23 +108,46 @@ Tests use the real `db` from `@/db` against an in-memory SQLite database; `.data
 | `npm run format:check` | Check formatting without writing                      |
 | `npm run typecheck`    | Generate Next.js route types, then run `tsc --noEmit` |
 
-## Design
+### Chat and MCP internals
 
-The visual system ("Vet Passport") is documented in [`DESIGN.md`](DESIGN.md); product decisions live in [`PRODUCT.md`](PRODUCT.md).
+Both endpoints answer only requests addressed to `localhost` or, on Vercel, to the deployment's own domains. Requests from other hosts or cross-site origins get a 403 ([`lib/request-guard.ts`](lib/request-guard.ts)).
 
-Species art: drop black-on-transparent files at `public/species/<species-id>.svg` (or `.png` / `.webp`). They're inked in the theme colour via a CSS mask and replace that species' emoji on the next request, no restart needed. Match the existing set: 512×512 PNG, animal centred with its longest side at about 88% of the canvas, fully transparent background (only alpha is used).
+**Chat** (`POST /api/chat`) returns 404 without `ANTHROPIC_API_KEY`. `ANTHROPIC_MODEL` picks another Claude model (default `claude-haiku-5-5`).
 
-## Learn More
+- **UI:** the docked panel in [`components/chat/`](components/chat). From 1280px wide it pushes the page column; between 640 and 1279px it slides over the page; below 640px it opens as a full-screen sheet. Page layouts that change at 1024px use container queries on the app shell (`@min-[1024px]:`), not viewport breakpoints.
+- **Page context:** pet pages publish their pet with `<ChatPetContext>`, and requests send its `petId` so "this pet" resolves.
+- **Approvals:** the server streams each change's confirmation sentence (the registry's `confirmMessage`) as a `data-confirm` part ([`lib/chat/confirmations.ts`](lib/chat/confirmations.ts)).
+- **Chat-only tools:** `citeRecords` lists the records an answer used; `navigate` opens a page in the browser.
+- **Client state:** client components use `usePetsChat()` and `useChatPanel()` inside `<ChatProvider>` ([`lib/chat/chat-provider.tsx`](lib/chat/chat-provider.tsx)).
 
-To learn more about Next.js, take a look at the following resources:
+**MCP** (`/api/mcp`, Streamable HTTP, no auth) serves the registry's tools, without `navigate` and `citeRecords`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+claude mcp add --transport http novellia-pets http://localhost:3000/api/mcp
+# or the deployed app: https://<your-app>.vercel.app/api/mcp
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Before each change runs, the server asks the client to confirm it through elicitation. Clients that don't support elicitation can read but can't make changes.
+
+### Species art
+
+Drop black-on-transparent files at `public/species/<species-id>.svg` (or `.png` / `.webp`). They're tinted with the theme colour through a CSS mask and replace that species' emoji on the next request, with no restart needed. Match the existing set: 512×512 PNG, animal centred with its longest side at about 88% of the canvas, fully transparent background (only alpha is used).
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Vercel functions have no persistent disk, so the deployed app keeps SQLite in `/tmp` and creates its own demo database. With `DATABASE_BOOTSTRAP=true`, the first query on a new instance migrates and seeds an empty database ([`db/bootstrap.ts`](db/bootstrap.ts)).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Import the repository at [vercel.com/new](https://vercel.com/new) (framework preset: Next.js; Node.js 24).
+2. Set these environment variables for Production:
+
+   | Variable             | Value                                    |
+   | -------------------- | ---------------------------------------- |
+   | `DATABASE_URL`       | `/tmp/app.db`                            |
+   | `DATABASE_BOOTSTRAP` | `true`                                   |
+   | `ANTHROPIC_API_KEY`  | your key (omit to disable chat)          |
+   | `ANTHROPIC_MODEL`    | optional, defaults to `claude-haiku-5-5` |
+
+3. Deploy, and share the production domain (`<project>.vercel.app`). By default, Vercel's Deployment Protection asks for a Vercel login on preview URLs but not on the production domain.
+
+> [!WARNING]
+> Demo data on Vercel is per instance and temporary. Changes last until Vercel recycles the instance (after idle time or a redeploy), and requests served by different instances can see different data. Everyone with the link shares the same household.

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CareStatus, PetCareSummary } from "@/db/models/care";
+import { HoldHeight } from "@/components/hold-height";
 import { PetCard } from "./pet-card";
 import { PetFilters } from "./pet-filters";
 
@@ -105,32 +106,34 @@ export function PetRoster({
         </nav>
       </div>
 
-      {shown.length > 0 ? (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {shown.map((summary) => (
-            <li key={summary.pet.id} className="grid grid-cols-1">
-              <PetCard
-                summary={summary}
-                today={today}
-                inked={summary.pet.id === inkedPetId}
-              />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="rounded-xl border border-dashed border-rule-strong bg-page px-5 py-8 text-center">
-          <p className="text-[16px] font-semibold">
-            No pets match these filters.
-          </p>
-          <Link
-            href="/"
-            scroll={false}
-            className="mt-1 inline-block text-[14px] font-semibold text-cover underline"
-          >
-            Clear filters
-          </Link>
-        </div>
-      )}
+      <HoldHeight>
+        {shown.length > 0 ? (
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {shown.map((summary) => (
+              <li key={summary.pet.id} className="grid grid-cols-1">
+                <PetCard
+                  summary={summary}
+                  today={today}
+                  inked={summary.pet.id === inkedPetId}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="rounded-xl border border-dashed border-rule-strong bg-page px-5 py-8 text-center">
+            <p className="text-[16px] font-semibold">
+              No pets match these filters.
+            </p>
+            <Link
+              href="/"
+              scroll={false}
+              className="mt-1 inline-block text-[14px] font-semibold text-cover underline"
+            >
+              Clear filters
+            </Link>
+          </div>
+        )}
+      </HoldHeight>
     </section>
   );
 }

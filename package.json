@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:make": "kysely migrate make",
     "db:migrate": "kysely migrate latest && npm run db:types",
     "db:rollback": "kysely migrate down && npm run db:types",
@@ -26,7 +28,7 @@
     "@next/env": "16.4.0",
     "@tailwindcss/turbopack": "^4",
     "@types/better-sqlite3": "^9.6.0",
-    "@types/node": "^20",
+    "@types/node": "^24.19.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
@@ -34,7 +36,8 @@
     "kysely-codegen": "^0.20.0",
     "kysely-ctl": "^0.21.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.3"
   },
   "allowScripts": {
     "better-sqlite3@12.11.1": true

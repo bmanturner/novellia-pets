@@ -40,6 +40,17 @@ npm run db:migrate     # run pending migrations, then regenerate db/types.ts
 
 The app's Kysely instance (`db/index.ts`) uses `CamelCasePlugin`: query with `camelCase`, store as `snake_case`. Migrations run without the plugin, so write table and column names in `snake_case` there. `db/types.ts` is generated; don't edit it.
 
+## Tests
+
+[Vitest](https://vitest.dev) runs data access and logic tests (`*.test.ts`, colocated with the code under test).
+
+```bash
+npm test             # run once
+npm run test:watch   # watch mode
+```
+
+Tests use the real `db` from `@/db` against an in-memory SQLite database; `.data/app.db` is never touched. Before every test, `test/setup-db.ts` rolls back and re-applies all migrations, so each test starts from an empty schema and every migration's `down()` is exercised.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -1,20 +1,8 @@
-import path from "node:path";
 import { Migrator, NO_MIGRATIONS } from "kysely/migration";
-import type { Migration, MigrationResultSet } from "kysely/migration";
+import type { MigrationResultSet } from "kysely/migration";
 import { beforeEach } from "vitest";
 import { db } from "@/db";
-
-// Load migrations through Vite so they get the same TypeScript transform as
-// the code under test (Kysely's FileMigrationProvider uses Node's import()).
-const migrationModules = import.meta.glob<Migration>("../db/migrations/*.ts", {
-  eager: true,
-});
-const migrations = Object.fromEntries(
-  Object.entries(migrationModules).map(([file, migration]) => [
-    path.basename(file, ".ts"),
-    migration,
-  ]),
-);
+import { migrations } from "@/db/bootstrap";
 
 // Each test file gets its own in-memory database (DATABASE_URL=:memory:).
 // Before every test, roll back all migrations and re-apply them: tests start

@@ -4,11 +4,11 @@ import {
   createPetsAgent,
   createPetsChatResponse,
 } from "@/lib/chat/agent";
-import { rejectNonLocalRequest } from "@/lib/local-request";
+import { rejectForeignRequest } from "@/lib/request-guard";
 import { currentToolContext } from "@/lib/tools/registry";
 
 export async function POST(req: Request): Promise<Response> {
-  const rejected = rejectNonLocalRequest(req);
+  const rejected = rejectForeignRequest(req);
   if (rejected) return rejected;
   if (!chatEnabled()) {
     return new Response("Chat is not configured.", { status: 404 });

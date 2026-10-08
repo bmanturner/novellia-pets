@@ -4,8 +4,13 @@ import SQLite from "better-sqlite3";
 import { SqliteDialect } from "kysely";
 
 // Shared by the app (db/index.ts) and kysely-ctl (kysely.config.ts), so it
-// must not import 'server-only'. The connection opens lazily on first query.
-export function createDialect(): SqliteDialect {
+// must not import 'server-only'. The connection opens lazily on first query;
+// with `onOpen`, queries wait until it resolves.
+export function createDialect({
+  onOpen,
+}: {
+  onOpen?: (database: SQLite.Database) => Promise<void>;
+} = {}): SqliteDialect {
   return new SqliteDialect({
     database: async () => {
       const url = process.env.DATABASE_URL;
@@ -18,6 +23,7 @@ export function createDialect(): SqliteDialect {
       const database = new SQLite(url);
       // SQLite leaves foreign key enforcement off unless enabled per connection.
       database.pragma("foreign_keys = ON");
+      await onOpen?.(database);
       return database;
     },
   });

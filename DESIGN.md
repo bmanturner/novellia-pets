@@ -368,6 +368,8 @@ A route-backed modal for adding and editing pets and records: in-app navigation 
 
 A Label-style label above a 40px white input (1px `rule`, 6px radius, 15px), optional Small muted hint below. Hover raises the border to `rule-strong`, focus moves it to Focus Blue with the focus ring. An invalid field turns its border Danger and shows a Small Danger error line with an alert icon, wired by `aria-describedby`. Selects carry the right-inset chevron; textareas start at 96px. Fields sit in a 2-column grid from `sm` with 16px gaps; title, notes and long text span both columns. Server errors keep every typed value.
 
+Due date fields carry **date shortcuts** under the input: Small (13px) semibold Cover Navy text buttons, underlined at 40% and darkening on hover, that fill the date. Vaccination "Next due" offers Next year, counted from the date given. A vet visit's "Next checkup due" offers Next year and Next month, counted from the visit date. A medication's "Refill or recheck due" offers Next month, counted from today. Dates that don't exist clamp to the month's last day. Each shortcut's accessible name says what it sets, and a status line announces the new date.
+
 ### Buttons
 
 - **Primary** (Cover Navy fill, Cover Ink text, 6px radius, 40px tall, 14px / 600, 16px side padding, optional 16px icon): hover darkens to Cover Navy Deep over 150ms. Used for "Add pet" in the first-run page.

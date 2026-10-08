@@ -2,9 +2,18 @@
 
 import { ChevronDown, CircleAlert } from "lucide-react";
 import Link from "next/link";
-import { createContext, useContext, useEffect, useId, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { useFormStatus } from "react-dom";
 import { DialogCloseContext } from "@/components/route-dialog";
+import { addMonths, isIsoDate } from "@/lib/dates";
+import { formatDate } from "@/lib/format";
 
 export const LABEL_CLASS =
   "text-[11px] leading-4 font-semibold tracking-[0.08em] text-ink-muted uppercase";
@@ -50,7 +59,9 @@ export function ScopedForm({
   useEffect(() => {
     if (Object.keys(errors).length === 0) return;
     ref.current
-      ?.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalid] input')
+      ?.querySelector<HTMLElement>(
+        '[aria-invalid="true"], [data-invalid] input',
+      )
       ?.focus();
   }, [errors]);
 
@@ -166,6 +177,69 @@ export function Input({
   );
 }
 
+function spanOf(months: number): string {
+  if (months === 12) return "a year";
+  if (months === 1) return "a month";
+  return months % 12 === 0 ? `${months / 12} years` : `${months} months`;
+}
+
+/**
+ * Quick picks under a date field ("Next year"). Each sets the field to a whole
+ * number of months after the `from` field's date, or after today when there is
+ * no `from` field or it's blank.
+ */
+export function DateShortcuts({
+  name,
+  label,
+  from,
+  today,
+  options,
+}: {
+  name: string;
+  /** The field's label, for the screen-reader description and announcement. */
+  label: string;
+  from?: { name: string; label: string };
+  today: string;
+  options: { label: string; months: number }[];
+}) {
+  const [announcement, setAnnouncement] = useState("");
+
+  function pick(button: HTMLButtonElement, months: number) {
+    const { form } = button;
+    const field = form?.elements.namedItem(name);
+    if (!(field instanceof HTMLInputElement)) return;
+    const anchor = from && form?.elements.namedItem(from.name);
+    const start =
+      anchor instanceof HTMLInputElement && isIsoDate(anchor.value)
+        ? anchor.value
+        : today;
+    field.value = addMonths(start, months);
+    setAnnouncement(`${label} set to ${formatDate(field.value, today)}.`);
+  }
+
+  return (
+    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[13px]">
+      {options.map((option) => (
+        <button
+          key={option.months}
+          type="button"
+          onClick={(event) => pick(event.currentTarget, option.months)}
+          className="rounded-sm font-semibold text-cover underline decoration-cover/40 underline-offset-2 transition-colors duration-150 hover:decoration-cover"
+        >
+          {option.label}
+          <span className="sr-only">
+            : set {label.toLowerCase()} to {spanOf(option.months)} after{" "}
+            {from ? from.label.toLowerCase() : "today"}
+          </span>
+        </button>
+      ))}
+      <span role="status" className="sr-only">
+        {announcement}
+      </span>
+    </div>
+  );
+}
+
 export function Textarea({
   name,
   error,
@@ -230,7 +304,11 @@ export function FormFooter({
   return (
     <div className="flex justify-end gap-3 border-t border-rule px-5 py-4">
       {closeDialog ? (
-        <button type="button" onClick={closeDialog} className={SECONDARY_BUTTON}>
+        <button
+          type="button"
+          onClick={closeDialog}
+          className={SECONDARY_BUTTON}
+        >
           Cancel
         </button>
       ) : (

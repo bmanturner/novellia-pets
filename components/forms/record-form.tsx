@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { saveRecordAction } from "@/app/pets/actions";
 import {
+  DateShortcuts,
   FormField,
   FormFooter,
   Input,
@@ -33,9 +34,14 @@ const SEGMENT =
 type Fields = {
   values: FormValues;
   errors: Record<string, string>;
+  /** Anchor for date shortcuts that count from today. */
+  today: string;
 };
 
-function VaccinationFields({ values, errors }: Fields) {
+const NEXT_YEAR = { label: "Next year", months: 12 };
+const NEXT_MONTH = { label: "Next month", months: 1 };
+
+function VaccinationFields({ values, errors, today }: Fields) {
   return (
     <>
       <FormField label="Date given" name="occurredOn" error={errors.occurredOn}>
@@ -53,6 +59,14 @@ function VaccinationFields({ values, errors }: Fields) {
           type="date"
           defaultValue={values.dueOn}
           error={errors.dueOn}
+        />
+        {/* Boosters fall due a set time after the shot, even a past one. */}
+        <DateShortcuts
+          name="dueOn"
+          label="Next due"
+          from={{ name: "occurredOn", label: "the date given" }}
+          today={today}
+          options={[NEXT_YEAR]}
         />
       </FormField>
       <FormField label="Clinic" name="clinic" error={errors.clinic}>
@@ -76,7 +90,7 @@ function VaccinationFields({ values, errors }: Fields) {
   );
 }
 
-function MedicationFields({ values, errors }: Fields) {
+function MedicationFields({ values, errors, today }: Fields) {
   return (
     <>
       <FormField label="Started" name="occurredOn" error={errors.occurredOn}>
@@ -106,6 +120,13 @@ function MedicationFields({ values, errors }: Fields) {
           type="date"
           defaultValue={values.dueOn}
           error={errors.dueOn}
+        />
+        {/* A refill counts from now, not from when the medication started. */}
+        <DateShortcuts
+          name="dueOn"
+          label="Refill or recheck due"
+          today={today}
+          options={[NEXT_MONTH]}
         />
       </FormField>
       <FormField label="Dosage" name="dosage" error={errors.dosage}>
@@ -140,7 +161,7 @@ function MedicationFields({ values, errors }: Fields) {
   );
 }
 
-function VisitFields({ values, errors }: Fields) {
+function VisitFields({ values, errors, today }: Fields) {
   return (
     <>
       <FormField label="Visit date" name="occurredOn" error={errors.occurredOn}>
@@ -158,6 +179,14 @@ function VisitFields({ values, errors }: Fields) {
           type="date"
           defaultValue={values.dueOn}
           error={errors.dueOn}
+        />
+        {/* Annual exams come back in a year; rechecks usually within a month. */}
+        <DateShortcuts
+          name="dueOn"
+          label="Next checkup due"
+          from={{ name: "occurredOn", label: "the visit date" }}
+          today={today}
+          options={[NEXT_YEAR, NEXT_MONTH]}
         />
       </FormField>
       <FormField label="Clinic" name="clinic" error={errors.clinic}>
@@ -243,7 +272,11 @@ function ConditionFields({ values, errors }: Fields) {
           <option value="severe">Severe</option>
         </Select>
       </FormField>
-      <FormField label="First noted" name="occurredOn" error={errors.occurredOn}>
+      <FormField
+        label="First noted"
+        name="occurredOn"
+        error={errors.occurredOn}
+      >
         <Input
           name="occurredOn"
           type="date"
@@ -389,7 +422,12 @@ export function RecordForm({
             suggestions={suggestions[typeId]}
           />
 
-          <TypeFields key={typeId} values={typeValues} errors={errors} />
+          <TypeFields
+            key={typeId}
+            values={typeValues}
+            errors={errors}
+            today={today}
+          />
 
           <FormField
             label="Notes"
@@ -428,7 +466,12 @@ function TitleField({
 }) {
   const listId = useListId("title");
   return (
-    <FormField label={label} name="title" error={error} className="sm:col-span-2">
+    <FormField
+      label={label}
+      name="title"
+      error={error}
+      className="sm:col-span-2"
+    >
       <Input
         name="title"
         maxLength={200}

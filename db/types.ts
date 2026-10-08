@@ -3,4 +3,64 @@
  * Please do not edit it manually.
  */
 
-export interface DB {}
+import type { ColumnType } from "kysely";
+
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
+
+export interface Household {
+  createdAt: Generated<string>;
+  id: Generated<number>;
+  name: string;
+}
+
+export interface MedicalRecord {
+  createdAt: Generated<string>;
+  details: Generated<string>;
+  dueOn: string | null;
+  endedOn: string | null;
+  id: Generated<number>;
+  notes: string | null;
+  occurredOn: string | null;
+  petId: number;
+  title: string;
+  typeId: string;
+  updatedAt: Generated<string>;
+}
+
+export interface MedicalRecordType {
+  id: string;
+  name: string;
+  sortOrder: number;
+}
+
+export interface Pet {
+  breed: string | null;
+  createdAt: Generated<string>;
+  dateOfBirth: string | null;
+  householdId: number;
+  id: Generated<number>;
+  microchipId: string | null;
+  name: string;
+  neutered: number | null;
+  notes: string | null;
+  sex: Generated<string>;
+  speciesId: string;
+  updatedAt: Generated<string>;
+}
+
+export interface Species {
+  emoji: string;
+  id: string;
+  name: string;
+  sortOrder: number;
+}
+
+export interface DB {
+  household: Household;
+  medicalRecord: MedicalRecord;
+  medicalRecordType: MedicalRecordType;
+  pet: Pet;
+  species: Species;
+}

@@ -538,7 +538,10 @@ test("getPetCare ignores other pets and other households", async () => {
     name: "Stranger",
     speciesId: "cat",
   });
-  const own = await addRecord(milo, vaccination("Own", "2026-01-01", "2026-06-20"));
+  const own = await addRecord(
+    milo,
+    vaccination("Own", "2026-01-01", "2026-06-20"),
+  );
   await addRecord(luna.id, vaccination("Luna's", "2026-01-01", "2026-06-20"));
   await addRecord(luna.id, medication("Luna pill", "2026-01-01"));
   await addRecord(

@@ -120,7 +120,10 @@ async function loadRecords(
  * outer whitespace): latest `occurredOn` (null oldest), then highest id.
  */
 function newestPerItem<
-  T extends Pick<CareRecord, "id" | "petId" | "typeId" | "title" | "occurredOn">,
+  T extends Pick<
+    CareRecord,
+    "id" | "petId" | "typeId" | "title" | "occurredOn"
+  >,
 >(records: T[]): T[] {
   const newest = new Map<string, T>();
   for (const record of records) {

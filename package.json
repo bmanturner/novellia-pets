@@ -6,22 +6,37 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:make": "kysely migrate make",
+    "db:migrate": "kysely migrate latest && npm run db:types",
+    "db:rollback": "kysely migrate down && npm run db:types",
+    "db:reset": "kysely migrate rollback --all && npm run db:migrate && npm run db:seed",
+    "db:seed": "kysely seed run",
+    "db:types": "kysely-codegen --dialect sqlite --camel-case --out-file db/types.ts"
   },
   "dependencies": {
+    "better-sqlite3": "^12.11.1",
     "kysely": "^0.29.6",
     "next": "16.4.0",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@next/env": "16.4.0",
     "@tailwindcss/turbopack": "^4",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "kysely-codegen": "^0.20.0",
+    "kysely-ctl": "^0.21.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
   }
 }

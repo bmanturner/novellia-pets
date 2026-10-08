@@ -20,6 +20,26 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Database
+
+SQLite via [Kysely](https://kysely.dev). Migrations and seeds run through [`kysely-ctl`](https://github.com/kysely-org/kysely-ctl).
+
+```bash
+cp .env.example .env   # sets DATABASE_URL=.data/app.db
+npm run db:migrate     # run pending migrations, then regenerate db/types.ts
+```
+
+| Script | Purpose |
+|---|---|
+| `npm run db:make -- <name>` | Create a migration in `db/migrations/` |
+| `npm run db:migrate` | Migrate to latest and regenerate types |
+| `npm run db:rollback` | Undo the last migration and regenerate types |
+| `npm run db:seed` | Run seeds in `db/seeds/` |
+| `npm run db:reset` | Roll back everything, migrate, and seed |
+| `npm run db:types` | Regenerate `db/types.ts` from the database |
+
+The app's Kysely instance (`db/index.ts`) uses `CamelCasePlugin`: query with `camelCase`, store as `snake_case`. Migrations run without the plugin, so write table and column names in `snake_case` there. `db/types.ts` is generated; don't edit it.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

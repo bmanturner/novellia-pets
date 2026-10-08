@@ -35,6 +35,9 @@ yarn-error.log*
 # local sqlite database
 /.data/
 
+# design review screenshots (regenerated per review)
+/.impeccable/review/
+
 # vercel
 .vercel
 

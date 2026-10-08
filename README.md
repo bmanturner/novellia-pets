@@ -51,6 +51,12 @@ Tests use the real `db` from `@/db` against an in-memory SQLite database; `.data
 | `npm run format:check` | Check formatting without writing                      |
 | `npm run typecheck`    | Generate Next.js route types, then run `tsc --noEmit` |
 
+## Design
+
+The visual system ("Vet Passport") is documented in [`DESIGN.md`](DESIGN.md); product decisions live in [`PRODUCT.md`](PRODUCT.md).
+
+Species art: drop black-on-transparent files at `public/species/<species-id>.svg` (or `.png` / `.webp`). They're inked in the theme colour via a CSS mask and replace that species' emoji on the next request, no restart needed. Match the existing set: 512×512 PNG, animal centred with its longest side at about 88% of the canvas, fully transparent background (only alpha is used).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

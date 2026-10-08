@@ -65,7 +65,7 @@ Not in the MVP: procedures & surgeries, lab results.
 
 **Decisions**
 
-- **Species:** common pets that have an emoji. Each species is shown with its emoji, for delight.
+- **Species:** common pets that have an emoji. Each species is shown with custom stamp art (supplied by the owner as `public/species/<id>.svg|png|webp`), with its emoji as the fallback until that species' art exists.
   - Dog 🐶, cat 🐱, rabbit 🐰, hamster 🐹, mouse 🐭, rat 🐀, hedgehog 🦔, bird 🦜, chicken 🐔, fish 🐠, turtle 🐢, lizard 🦎, snake 🐍, horse 🐴.
   - Other 🐾 covers everything else. The free-text breed field then says what the animal is (e.g. guinea pig, ferret).
   - Pets store a stable species id (`dog`, `hedgehog`, `other`…), never the emoji. The emoji is display only and can change without touching data.
@@ -92,7 +92,7 @@ Not in the MVP: procedures & surgeries, lab results.
   - A medication's due date is its refill or recheck date, not each dose. Dose reminders need notifications, which are out of scope.
   - "Today" is the server's local date in the MVP. A deployed version would take it from the household's time zone.
 - **Find and filter:**
-  - Pets: search by name or breed; filter by species and care status; sorted needs-attention first by default.
+  - Pets: search by name, breed or microchip number (spaces and hyphens in the number are ignored); filter by species and care status; sorted needs-attention first by default.
   - A pet's records: filter by type; search titles and notes.
   - Across pets: the dashboard's due list. No separate global record search in the MVP.
   - Filters live in the URL, so filtered views survive a refresh, work with the back button and can be shared.

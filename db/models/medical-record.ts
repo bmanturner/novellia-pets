@@ -80,6 +80,31 @@ const variants = {
   >;
 };
 
+/** Per-type `details` schemas, for parsing stored details. */
+export const recordDetailsSchemas = {
+  vaccination: variants.vaccination.shape.details,
+  medication: variants.medication.shape.details,
+  visit: variants.visit.shape.details,
+  condition: variants.condition.shape.details,
+};
+
+export type RecordFilters = { typeId?: MedicalRecordTypeId; query?: string };
+
+/** `query` is matched case-insensitively against title and notes after trimming; blank filters are ignored. Keeps input order. */
+export function filterMedicalRecords(
+  records: MedicalRecord[],
+  filters: RecordFilters,
+): MedicalRecord[] {
+  const query = filters.query?.trim().toLowerCase();
+  return records.filter(
+    (record) =>
+      (!filters.typeId || record.typeId === filters.typeId) &&
+      (!query ||
+        record.title.toLowerCase().includes(query) ||
+        (record.notes?.toLowerCase().includes(query) ?? false)),
+  );
+}
+
 export const MedicalRecordInputSchema = z
   .discriminatedUnion("typeId", [
     variants.vaccination,

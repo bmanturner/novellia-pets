@@ -8,8 +8,8 @@ import {
 } from "@/db/models/care";
 import { getCurrentHouseholdId } from "@/db/models/household";
 import { getMedicalRecord } from "@/db/models/medical-record";
+import { Toast } from "@/components/toast";
 import { FirstRun } from "./first-run";
-import { LoggedToast } from "./logged-toast";
 import { Medications } from "./medications";
 import { NextDue } from "./next-due";
 import { PetRoster } from "./pet-roster";
@@ -62,7 +62,12 @@ export async function Dashboard({
     <>
       <div className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="lg:col-span-2">
-          <NextDue items={dueItems} nextBeyond={nextBeyond} today={today} />
+          <NextDue
+            items={dueItems}
+            nextBeyond={nextBeyond}
+            today={today}
+            scope="household"
+          />
         </div>
         <div className="lg:col-start-2 lg:row-start-2">
           <Medications medications={medications} today={today} />
@@ -79,8 +84,9 @@ export async function Dashboard({
         </div>
       </div>
       {logged && loggedPet && (
-        <LoggedToast
+        <Toast
           message={`Logged ${logged.title} for ${loggedPet.pet.name}.`}
+          param="logged"
         />
       )}
     </>

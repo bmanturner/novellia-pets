@@ -1,12 +1,12 @@
 import Link from "next/link";
 import type { PetCareSummary } from "@/db/models/care";
 import { Field } from "@/components/field";
+import { MicrochipStrip } from "@/components/microchip-strip";
 import { SpeciesMark } from "@/components/species-mark";
 import { Stamp } from "@/components/stamp";
 import {
   formatAge,
   formatDate,
-  formatMicrochip,
   formatSex,
   plural,
 } from "@/lib/format";
@@ -86,17 +86,7 @@ export function PetCard({
         <Stamp status={status} inked={inked} seed={pet.id} />
       </div>
 
-      {pet.microchipId ? (
-        <p className="rounded-b-xl border-t border-rule bg-page-tint px-4 py-2 font-mono text-[12px] leading-4 tracking-[0.1em] text-ink-muted uppercase">
-          <span className="sr-only">Microchip: </span>
-          <span aria-hidden>Chip </span>
-          {formatMicrochip(pet.microchipId)}
-        </p>
-      ) : (
-        <p className="rounded-b-xl border-t border-rule bg-page-tint px-4 py-2 text-[11px] leading-4 font-semibold tracking-[0.08em] text-ink-muted uppercase">
-          No microchip on file
-        </p>
-      )}
+      <MicrochipStrip microchipId={pet.microchipId} />
     </article>
   );
 }

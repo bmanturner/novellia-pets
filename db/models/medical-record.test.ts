@@ -5,11 +5,12 @@ import {
   createMedicalRecord,
   deleteMedicalRecord,
   getMedicalRecord,
+  filterMedicalRecords,
   listMedicalRecords,
   MedicalRecordInputSchema,
   updateMedicalRecord,
 } from "./medical-record";
-import type { MedicalRecordInput } from "./medical-record";
+import type { MedicalRecordInput, RecordFilters } from "./medical-record";
 import { createPet } from "./pet";
 
 let householdId: number;
@@ -143,5 +144,36 @@ test("JSON-looking notes come back as plain text", async () => {
 
   expect((await getMedicalRecord(householdId, created!.id))?.notes).toBe(
     "[1,2]",
+  );
+});
+
+test("filterMedicalRecords filters by type, title and notes, keeping order", async () => {
+  await createMedicalRecord(householdId, petId, {
+    typeId: "medication",
+    title: "Apoquel",
+    occurredOn: "2026-05-01",
+    notes: "Refill date.",
+    details: {},
+  });
+  await createMedicalRecord(householdId, petId, rabies);
+  await createMedicalRecord(householdId, petId, {
+    ...rabies,
+    title: "Distemper",
+    occurredOn: "2026-03-01",
+  });
+  const records = await listMedicalRecords(householdId, petId);
+  const titles = (filters: RecordFilters) =>
+    filterMedicalRecords(records, filters).map((record) => record.title);
+
+  expect(titles({ typeId: "vaccination" })).toEqual(["Distemper", "Rabies"]);
+  expect(titles({ typeId: "medication" })).toEqual(["Apoquel"]);
+  expect(titles({ query: "  REFILL " })).toEqual(["Apoquel"]);
+  expect(titles({ query: "rabi" })).toEqual(["Rabies"]);
+  expect(titles({ typeId: "vaccination", query: "refill" })).toEqual([]);
+  expect(titles({ typeId: undefined, query: "   " })).toEqual(
+    records.map((record) => record.title),
+  );
+  expect(titles({ typeId: "vaccination" })).toEqual(
+    records.filter((r) => r.typeId === "vaccination").map((r) => r.title),
   );
 });

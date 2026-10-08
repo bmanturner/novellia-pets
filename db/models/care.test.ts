@@ -2,6 +2,7 @@ import { beforeEach, expect, test } from "vitest";
 import { db } from "@/db";
 import {
   daysBetween,
+  getPetCare,
   listActiveMedications,
   listDueItems,
   listPetCareSummaries,
@@ -10,7 +11,7 @@ import {
 import { getCurrentHouseholdId } from "./household";
 import { createMedicalRecord } from "./medical-record";
 import type { MedicalRecordInput } from "./medical-record";
-import { createPet } from "./pet";
+import { createPet, getPet } from "./pet";
 
 const today = "2026-06-15";
 const otherHouseholdId = 2;
@@ -261,6 +262,7 @@ test("active medications map record fields and ignore other types", async () => 
       title: "Apoquel",
       dosage: "5 mg",
       frequency: "Daily",
+      prescribedBy: null,
       startedOn: "2026-05-01",
       endsOn: "2026-12-01",
       refillOn: "2026-07-01",
@@ -271,6 +273,7 @@ test("active medications map record fields and ignore other types", async () => 
       title: "Bare",
       dosage: null,
       frequency: null,
+      prescribedBy: null,
       startedOn: "2026-05-01",
       endsOn: null,
       refillOn: null,
@@ -513,4 +516,162 @@ test("toLocalDate formats with zero padding in local time", () => {
   expect(toLocalDate(new Date(2026, 0, 5, 23, 59, 59))).toBe("2026-01-05");
   expect(toLocalDate(new Date(2026, 11, 31, 0, 0, 0))).toBe("2026-12-31");
   expect(toLocalDate(new Date(987, 2, 9))).toBe("0987-03-09");
+});
+
+async function petCare(petId: number) {
+  const pet = await getPet(householdId, petId);
+  return getPetCare(householdId, pet!, today);
+}
+
+function condition(
+  title: string,
+  kind: "allergy" | "condition",
+  severity?: "mild" | "moderate" | "severe",
+  extra: { endedOn?: string; occurredOn?: string } = {},
+): MedicalRecordInput {
+  return { typeId: "condition", title, ...extra, details: { kind, severity } };
+}
+
+test("getPetCare ignores other pets and other households", async () => {
+  const luna = await createPet(householdId, { name: "Luna", speciesId: "cat" });
+  const stranger = await createPet(otherHouseholdId, {
+    name: "Stranger",
+    speciesId: "cat",
+  });
+  const own = await addRecord(milo, vaccination("Own", "2026-01-01", "2026-06-20"));
+  await addRecord(luna.id, vaccination("Luna's", "2026-01-01", "2026-06-20"));
+  await addRecord(luna.id, medication("Luna pill", "2026-01-01"));
+  await addRecord(
+    stranger.id,
+    vaccination("Theirs", "2026-01-01", "2026-06-20"),
+    otherHouseholdId,
+  );
+
+  const care = await petCare(milo);
+  expect(care.dueItems.map((i) => i.recordId)).toEqual([own]);
+  expect(care.vaccinations.map((v) => v.title)).toEqual(["Own"]);
+  expect(care.medications).toEqual([]);
+});
+
+test("getPetCare separates due items from the next one beyond the window", async () => {
+  await addRecord(milo, vaccination("Soon", "2026-01-01", "2026-06-20"));
+  await addRecord(milo, vaccination("Late", "2026-01-01", "2026-06-01"));
+  await addRecord(milo, vaccination("Far", "2026-01-01", "2026-09-01"));
+  await addRecord(milo, vaccination("Farther", "2026-01-01", "2026-12-01"));
+
+  const care = await petCare(milo);
+  expect(care.dueItems.map((i) => [i.title, i.status])).toEqual([
+    ["Late", "overdue"],
+    ["Soon", "due-soon"],
+  ]);
+  expect(care.nextBeyond).toMatchObject({ title: "Far", status: "up-to-date" });
+  expect(care.status).toBe("overdue");
+});
+
+test("getPetCare status is up to date with no due items", async () => {
+  await addRecord(milo, vaccination("Far", "2026-01-01", "2026-09-01"));
+
+  const care = await petCare(milo);
+  expect(care.dueItems).toEqual([]);
+  expect(care.status).toBe("up-to-date");
+  expect(care.nextBeyond?.title).toBe("Far");
+});
+
+test("getPetCare conditions exclude ended ones and sort allergies first, then severity", async () => {
+  await addRecord(milo, condition("Arthritis", "condition", "severe"));
+  await addRecord(milo, condition("Pollen", "allergy"));
+  await addRecord(milo, condition("Chicken", "allergy", "mild"));
+  await addRecord(milo, condition("Peanut", "allergy", "severe"));
+  await addRecord(
+    milo,
+    condition("Old allergy", "allergy", "severe", { endedOn: "2026-06-14" }),
+  );
+  await addRecord(
+    milo,
+    condition("Future", "allergy", "severe", { occurredOn: "2026-07-01" }),
+  );
+
+  const care = await petCare(milo);
+  expect(care.conditions.map((c) => [c.title, c.kind, c.severity])).toEqual([
+    ["Peanut", "allergy", "severe"],
+    ["Chicken", "allergy", "mild"],
+    ["Pollen", "allergy", null],
+    ["Arthritis", "condition", "severe"],
+  ]);
+});
+
+test("getPetCare vaccinations keep the newest record per title and skip future ones", async () => {
+  await addRecord(milo, vaccination("Rabies", "2025-01-01", "2026-01-01"));
+  const newer = await addRecord(
+    milo,
+    vaccination(" rabies ", "2026-01-01", "2027-01-01"),
+  );
+  await addRecord(milo, vaccination("Rabies", "2026-09-01", "2027-09-01"));
+  await addRecord(milo, vaccination("DHPP", "2026-02-01"));
+  await addRecord(milo, vaccination("Lepto", "2026-07-01"));
+
+  const care = await petCare(milo);
+  expect(care.vaccinations).toEqual([
+    {
+      recordId: expect.any(Number),
+      title: "DHPP",
+      givenOn: "2026-02-01",
+      dueOn: null,
+      clinic: null,
+    },
+    {
+      recordId: newer,
+      title: "rabies",
+      givenOn: "2026-01-01",
+      dueOn: "2027-01-01",
+      clinic: null,
+    },
+  ]);
+});
+
+test("getPetCare lastVisit is the latest visit on or before today", async () => {
+  const visit = (title: string, occurredOn: string): MedicalRecordInput => ({
+    typeId: "visit",
+    title,
+    occurredOn,
+    details: { clinic: "Fictional Vet", weight: { value: 12.5, unit: "kg" } },
+  });
+  await addRecord(milo, visit("Old", "2025-05-01"));
+  const latest = await addRecord(milo, visit("Latest", "2026-06-15"));
+  await addRecord(milo, visit("Future", "2026-07-01"));
+
+  const care = await petCare(milo);
+  expect(care.lastVisit).toEqual({
+    recordId: latest,
+    title: "Latest",
+    occurredOn: "2026-06-15",
+    clinic: "Fictional Vet",
+    veterinarian: null,
+    weight: { value: 12.5, unit: "kg" },
+  });
+});
+
+test("getPetCare lastVisit is null without past visits", async () => {
+  await addRecord(milo, {
+    typeId: "visit",
+    title: "Future",
+    occurredOn: "2026-07-01",
+    details: {},
+  });
+
+  expect((await petCare(milo)).lastVisit).toBeNull();
+});
+
+test("getPetCare medications include who prescribed them", async () => {
+  await addRecord(milo, {
+    typeId: "medication",
+    title: "Apoquel",
+    occurredOn: "2026-05-01",
+    details: { prescribedBy: "Dr. Carson" },
+  });
+
+  const care = await petCare(milo);
+  expect(care.medications).toMatchObject([
+    { title: "Apoquel", prescribedBy: "Dr. Carson" },
+  ]);
 });

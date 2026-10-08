@@ -36,10 +36,12 @@ function DueRow({
   item,
   today,
   urgent,
+  scope,
 }: {
   item: DueItem;
   today: string;
   urgent: boolean;
+  scope: "household" | "pet";
 }) {
   const muted = urgent ? "text-cover-muted" : "text-ink-muted";
   return (
@@ -55,23 +57,36 @@ function DueRow({
       </div>
 
       <div className="col-span-2 row-start-2 flex min-w-0 items-center gap-3 md:col-span-1 md:col-auto md:row-auto">
-        <SpeciesMark species={item.pet.species} size="row" onCover={urgent} />
-        <div className="min-w-0">
-          <p className="truncate text-[16px] leading-6">
-            <Link
-              href={routes.pet(item.pet.id)}
-              className="font-bold underline-offset-[0.2em] hover:underline"
-            >
-              {item.pet.name}
-            </Link>{" "}
-            <span className={`text-[14px] ${muted}`}>
-              {item.pet.species.name}
-            </span>
-          </p>
-          <p className="truncate text-[15px] leading-5">
-            {item.title} <span className={muted}>· {item.typeName}</span>
-          </p>
-        </div>
+        {scope === "household" ? (
+          <>
+            <SpeciesMark species={item.pet.species} size="row" onCover={urgent} />
+            <div className="min-w-0">
+              <p className="truncate text-[16px] leading-6">
+                <Link
+                  href={routes.pet(item.pet.id)}
+                  className="font-bold underline-offset-[0.2em] hover:underline"
+                >
+                  {item.pet.name}
+                </Link>{" "}
+                <span className={`text-[14px] ${muted}`}>
+                  {item.pet.species.name}
+                </span>
+              </p>
+              <p className="truncate text-[15px] leading-5">
+                {item.title} <span className={muted}>· {item.typeName}</span>
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="min-w-0">
+            <p className="truncate text-[16px] leading-6 font-bold">
+              {item.title}
+            </p>
+            <p className={`truncate text-[14px] leading-5 ${muted}`}>
+              {item.typeName}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="col-start-1 row-start-3 md:col-auto md:row-auto">
@@ -91,7 +106,11 @@ function DueRow({
 
       <div className="col-start-2 row-start-3 justify-self-end md:col-auto md:row-auto">
         <Link
-          href={routes.logNext(item.pet.id, item.typeId, item.title)}
+          href={
+            scope === "household"
+              ? routes.logNext(item.pet.id, item.typeId, item.title, "home")
+              : routes.logNext(item.pet.id, item.typeId, item.title)
+          }
           className={[
             "inline-flex h-10 items-center gap-2 rounded-md px-3.5 text-[14px] font-semibold whitespace-nowrap transition-colors duration-150",
             urgent
@@ -115,11 +134,13 @@ export function NextDue({
   items,
   nextBeyond,
   today,
+  scope,
 }: {
   items: DueItem[];
   /** The soonest due item past the 30-day window, for the all-clear state. */
   nextBeyond: DueItem | null;
   today: string;
+  scope: "household" | "pet";
 }) {
   return (
     <section aria-labelledby="next-due-heading">
@@ -146,6 +167,7 @@ export function NextDue({
               item={item}
               today={today}
               urgent={index === 0}
+              scope={scope}
             />
           ))}
         </ol>
@@ -158,20 +180,30 @@ export function NextDue({
             </p>
             <p className="text-[14px] text-ink-muted">
               {nextBeyond ? (
-                <>
-                  Next up: {nextBeyond.title} for{" "}
-                  <Link
-                    href={routes.pet(nextBeyond.pet.id)}
-                    className="font-semibold text-ink underline"
-                  >
-                    {nextBeyond.pet.name}
-                  </Link>{" "}
-                  on{" "}
-                  <time dateTime={nextBeyond.dueOn}>
-                    {formatDate(nextBeyond.dueOn, today)}
-                  </time>
-                  .
-                </>
+                scope === "household" ? (
+                  <>
+                    Next up: {nextBeyond.title} for{" "}
+                    <Link
+                      href={routes.pet(nextBeyond.pet.id)}
+                      className="font-semibold text-ink underline"
+                    >
+                      {nextBeyond.pet.name}
+                    </Link>{" "}
+                    on{" "}
+                    <time dateTime={nextBeyond.dueOn}>
+                      {formatDate(nextBeyond.dueOn, today)}
+                    </time>
+                    .
+                  </>
+                ) : (
+                  <>
+                    Next up: {nextBeyond.title} on{" "}
+                    <time dateTime={nextBeyond.dueOn}>
+                      {formatDate(nextBeyond.dueOn, today)}
+                    </time>
+                    .
+                  </>
+                )
               ) : (
                 "No upcoming due dates are on file."
               )}

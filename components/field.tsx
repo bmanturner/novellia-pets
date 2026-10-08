@@ -3,17 +3,21 @@ export function Field({
   label,
   children,
   className = "",
+  clamp = true,
 }: {
   label: string;
   children: React.ReactNode;
   className?: string;
+  clamp?: boolean;
 }) {
   return (
     <div className={`min-w-0 ${className}`}>
       <dt className="text-[11px] leading-4 font-semibold tracking-[0.08em] text-ink-muted uppercase">
         {label}
       </dt>
-      <dd className="line-clamp-2 text-[14px] leading-5 break-words">
+      <dd
+        className={`${clamp ? "line-clamp-2" : "whitespace-pre-line"} text-[14px] leading-5 break-words`}
+      >
         {children}
       </dd>
     </div>

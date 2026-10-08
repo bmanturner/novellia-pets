@@ -4,20 +4,26 @@ import { Stamp as StampIcon, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 /**
- * Confirms a just-logged record (`?logged=<recordId>`) and drops the param so
- * a refresh doesn't confirm it again. `history.replaceState` updates the URL
- * without a server render, which would unmount this toast.
+ * Confirms a just-finished action and drops its URL param (`?logged=<id>`,
+ * `?notice=<code>`) so a refresh doesn't confirm it again. `history.replaceState`
+ * updates the URL without a server render, which would unmount this toast.
  */
-export function LoggedToast({ message }: { message: string }) {
+export function Toast({
+  message,
+  param,
+}: {
+  message: string;
+  param: "logged" | "notice";
+}) {
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    url.searchParams.delete("logged");
+    url.searchParams.delete(param);
     window.history.replaceState(null, "", url);
     const timer = window.setTimeout(() => setOpen(false), 6000);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [param]);
 
   return (
     <div

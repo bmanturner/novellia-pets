@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Overpass_Mono, Public_Sans } from "next/font/google";
+import { Suspense } from "react";
+import { NoticeToast } from "@/components/notice-toast";
 import { TopBar } from "@/components/top-bar";
 import "./globals.css";
 
@@ -19,7 +21,13 @@ export const metadata: Metadata = {
     "Your pets' medical records, with what's overdue or due soon up front.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+  modal,
+}: {
+  children: React.ReactNode;
+  modal: React.ReactNode;
+}) {
   return (
     <html
       lang="en"
@@ -28,6 +36,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <TopBar />
         {children}
+        {modal}
+        <Suspense fallback={null}>
+          <NoticeToast />
+        </Suspense>
       </body>
     </html>
   );

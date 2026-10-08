@@ -2,21 +2,15 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Requires Node.js 24 or newer (`.nvmrc` pins 24; run `nvm use`).
 
 ```bash
+npm install
+npm run setup   # create .env from .env.example, migrate, and seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
@@ -24,19 +18,16 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 SQLite via [Kysely](https://kysely.dev). Migrations and seeds run through [`kysely-ctl`](https://github.com/kysely-org/kysely-ctl).
 
-```bash
-cp .env.example .env   # sets DATABASE_URL=.data/app.db
-npm run db:migrate     # run pending migrations, then regenerate db/types.ts
-```
+`npm run setup` creates `.env` (`DATABASE_URL=.data/app.db`) and migrates and seeds the database.
 
-| Script | Purpose |
-|---|---|
-| `npm run db:make -- <name>` | Create a migration in `db/migrations/` |
-| `npm run db:migrate` | Migrate to latest and regenerate types |
-| `npm run db:rollback` | Undo the last migration and regenerate types |
-| `npm run db:seed` | Run seeds in `db/seeds/` |
-| `npm run db:reset` | Roll back everything, migrate, and seed |
-| `npm run db:types` | Regenerate `db/types.ts` from the database |
+| Script                      | Purpose                                      |
+| --------------------------- | -------------------------------------------- |
+| `npm run db:make -- <name>` | Create a migration in `db/migrations/`       |
+| `npm run db:migrate`        | Migrate to latest and regenerate types       |
+| `npm run db:rollback`       | Undo the last migration and regenerate types |
+| `npm run db:seed`           | Run seeds in `db/seeds/`                     |
+| `npm run db:reset`          | Roll back everything, migrate, and seed      |
+| `npm run db:types`          | Regenerate `db/types.ts` from the database   |
 
 The app's Kysely instance (`db/index.ts`) uses `CamelCasePlugin`: query with `camelCase`, store as `snake_case`. Migrations run without the plugin, so write table and column names in `snake_case` there. `db/types.ts` is generated; don't edit it.
 
@@ -50,6 +41,15 @@ npm run test:watch   # watch mode
 ```
 
 Tests use the real `db` from `@/db` against an in-memory SQLite database; `.data/app.db` is never touched. Before every test, `test/setup-db.ts` rolls back and re-applies all migrations, so each test starts from an empty schema and every migration's `down()` is exercised.
+
+## Code Quality
+
+| Script                 | Purpose                                               |
+| ---------------------- | ----------------------------------------------------- |
+| `npm run lint`         | ESLint (formatting rules are left to Prettier)        |
+| `npm run format`       | Format everything with Prettier                       |
+| `npm run format:check` | Check formatting without writing                      |
+| `npm run typecheck`    | Generate Next.js route types, then run `tsc --noEmit` |
 
 ## Learn More
 

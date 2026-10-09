@@ -28,7 +28,9 @@ export async function PetStatus({
 
   if (records.length === 0) return <FirstRecord pet={pet} />;
 
-  const rawLogged = Array.isArray(query.logged) ? query.logged[0] : query.logged;
+  const rawLogged = Array.isArray(query.logged)
+    ? query.logged[0]
+    : query.logged;
   const loggedId = Number(rawLogged);
   const logged =
     Number.isInteger(loggedId) && loggedId > 0

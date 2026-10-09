@@ -2,8 +2,6 @@
 
 Track your household's pets and their medical records, see what care is overdue or due soon, and ask a Claude-powered assistant about them in plain language.
 
-**Live demo:** _add the Vercel production URL here_ (see [Deploy on Vercel](#deploy-on-vercel))
-
 ## What to try
 
 The demo data is a fictional household of famous movie pets. Mr. Jinx is overdue for care, Hooch and Toto are due soon, and the rest are up to date.
@@ -14,6 +12,7 @@ The demo data is a fictional household of famous movie pets. Mr. Jinx is overdue
   - **Records:** full history; filter by type and search titles and notes.
   - **Profile:** species, breed, sex, age, microchip and notes.
 - **Medical records:** vaccinations, medications, vet visits, and allergies or conditions. Each has a date, an optional end date and an optional due date. Logging this year's rabies shot clears last year's due date.
+- **Vet summary:** open **Vet summary** on a pet's page for a printable sheet to hand to a new vet, boarding desk or sitter, with a cut-out wallet card. Tick **Include full history** to add every record.
 - **Chat:** open **Ask** in the top bar. Try:
   - "Who's overdue for anything?"
   - "What medications is Marley on?"

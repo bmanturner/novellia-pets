@@ -1,7 +1,11 @@
 import { formatMicrochip } from "@/lib/format";
 
 /** The card footer of a pet's data page: microchip number, or its absence. */
-export function MicrochipStrip({ microchipId }: { microchipId: string | null }) {
+export function MicrochipStrip({
+  microchipId,
+}: {
+  microchipId: string | null;
+}) {
   return microchipId ? (
     <p className="rounded-b-xl border-t border-rule bg-page-tint px-4 py-2 font-mono text-[12px] leading-4 tracking-[0.1em] text-ink-muted uppercase">
       <span className="sr-only">Microchip: </span>

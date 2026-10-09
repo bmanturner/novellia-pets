@@ -228,11 +228,11 @@ components:
 
 **Creative North Star: "The Vet Passport"**
 
-The app is a pet passport opened on a desk. The top bar is the navy cover with its gold-foil wordmark and the e-passport chip symbol. Below it lies cool security paper, and each pet is a white data page: a passport-proportioned photo box, small-caps labelled fields, a ruled footer. Care status is not a badge or a count. It is an ink stamp pressed onto the page, in real text, double-ruled and slightly tilted. A pet's own page is the passport flipped open: one header data page and three page tabs (Status, Records, Profile), each its own URL.
+The app is a pet passport opened on a desk. The top bar is the navy cover with its gold-foil wordmark and a gold-foil paw print. Below it lies cool security paper, and each pet is a white data page: a passport-proportioned photo box, small-caps labelled fields, a ruled footer. Care status is not a badge or a count. It is an ink stamp pressed onto the page, in real text, double-ruled and slightly tilted. A pet's own page is the passport flipped open: one header data page and three page tabs (Status, Records, Profile), each its own URL.
 
 Colour carries meaning and nothing else. Red means overdue (and, as Danger, a destructive action or a form error), violet means due soon, navy means up to date. Gold foil appears once, on the wordmark. Everything else is navy ink on cool white and pale blue-grey paper. The density is a calm record-keeping density: 14px body, 1px rules, generous 16px page padding, no shadows at rest.
 
-The system rejects, explicitly: stat-card counts, charts, paw-print decoration, guilloche patterns or stamps used as ornament, and a single endless profile scroll. A stamp is always a real status with its word, never decoration.
+The system rejects, explicitly: stat-card counts, charts, guilloche patterns or stamps used as ornament, and a single endless profile scroll. A stamp is always a real status with its word, never decoration.
 
 **Key Characteristics:**
 
@@ -254,7 +254,7 @@ A navy-and-paper palette. The cover navy and security-paper blue-grey are the wo
 
 ### Secondary
 
-- **Gold Foil** (`#dcb862`): the wordmark and chip mark in the top bar, the stamp icon in the toast, and focus outlines when sitting on navy. Nowhere else.
+- **Gold Foil** (`#dcb862`): the wordmark and paw mark in the top bar, the stamp icon in the toast, and focus outlines when sitting on navy. Nowhere else.
 
 ### Tertiary (status ink)
 
@@ -276,7 +276,7 @@ A navy-and-paper palette. The cover navy and security-paper blue-grey are the wo
 
 **The Meaningful Ink Rule.** Red, violet and navy-as-ink mean overdue, due soon and up to date; red as Danger additionally marks a destructive action or a form error. They never colour a heading or decoration, a status is never shown by colour alone (the stamp prints its word), and a danger control or error always says what it does or what is wrong in words.
 
-**The One Foil Rule.** Gold foil belongs to the wordmark (and its immediate cover companions: chip mark, toast stamp icon, focus ring on navy). It is never a fill, border or accent on a data page.
+**The One Foil Rule.** Gold foil belongs to the wordmark (and its immediate cover companions: paw mark, toast stamp icon, focus ring on navy). It is never a fill, border or accent on a data page.
 
 ## Typography
 
@@ -315,6 +315,8 @@ Spacing runs on a 4px base with working steps of 8, 12, 16, 24, 32 and 40px. Dat
 The pet page uses the same 1200px column: the back link, the header data page, the page tabs, then the tab's content 32px below. Status puts Next due full width, then a 2-column grid (once the app shell is 1024px wide) of Allergies & conditions, Current medications, Vaccinations and Last vet visit with 40px row and 32px column gaps. Records stacks search, the type tabs, and year-grouped lists; each record row is a 96px date column, the content, and right-aligned actions from `sm`. Full-page forms (a hard load of a form URL) use a 640px column.
 
 The inquiry panel is a 400px column (`--chat-panel-width`) on the right edge. From 1280px it docks: the page column and the top bar's content take 400px of right padding, so nothing is covered. From 640px to 1279px it overlays the page. Below 640px it is a full-screen sheet and the page behind stops scrolling.
+
+The vet summary is a narrower, document-width page: a single 880px column (`max-w-[880px]`, 16 / 24px side padding, 24px top and 40px at `lg`, 64px bottom) outside the pet tabs, with no pet header. In print the column limit and padding go, and the page margin is the paper's (see Vet summary).
 
 ## Elevation & Depth
 
@@ -375,6 +377,7 @@ Due date fields carry **date shortcuts** under the input: Small (13px) semibold 
 - **Primary** (Cover Navy fill, Cover Ink text, 6px radius, 40px tall, 14px / 600, 16px side padding, optional 16px icon): hover darkens to Cover Navy Deep over 150ms. Used for "Add pet" in the first-run page.
 - **On cover** (Cover Ink fill, navy text): "Add pet" in the top bar and the log action in an urgent row; hover to white; focus ring in gold foil.
 - **Secondary** (white fill, navy text, 1px navy at 25% border): the log action in ordinary due rows, Edit pet, Cancel; hover raises the border to 50% and tints the fill.
+- **Secondary, in the pet header:** "Vet summary" with a 16px document icon follows Edit pet in the same Secondary style. On phones it takes its own full-width row (centred); from `sm` it sits inline in the right-aligned action group. The summary toolbar's **Print** is a Primary (40px, 16px printer icon).
 - **Danger** (Danger fill, white text, the Primary's shape): only the confirm button inside a delete confirmation, in the dialog or in the inquiry panel (where it is 32px tall, 13px); label names the act ("Delete record", "Delete Hooch") and reads "Deleting…" while pending in the dialog.
 - **Danger outline** (white fill, Danger text, Danger at 40% border, trash icon): the button that opens a pet's delete confirmation. In record rows it is a compact 32px, 13px text-only Delete beside Edit.
 - **Focus:** 2px `focus` outline, 2px offset, 4px radius on paper; gold foil when on the cover.
@@ -401,6 +404,26 @@ The household's question desk: a 400px column that answers from the records and,
 - **Composer:** a ruled footer holding a framed field (1px `rule`, 6px radius, hover `rule-strong`, Focus Blue border and ring on focus) with an auto-growing textarea (15px; 16px on mobile), an "About" context chip on the bottom left (species mark, pet name, a 24px remove button; tint fill, 1px `rule`) and a 32px send button (Cover Navy, arrow icon) that becomes a Secondary stop button while a reply streams.
 - **Re-ink signal:** when a chat-confirmed change touches a pet's records, that pet's stamp wherever it is on the page replays stamp-down. There is no toast.
 
+### Vet summary
+
+The pet's handover: a passport data page you can cut out, stapled to a full clinical sheet, for a new vet, ER staff, a boarding desk or a sitter who has no app context. It is the same Vet Passport world, with no new tokens. Allergies, medications and conditions lead for every reader; there is no owner contact block.
+
+- **Sheet:** one `article` in a 880px column. On screen a white data page (12px radius, 1px `rule` border, 20px padding, 32px from `sm`) on the paper ground; in print plain paper with no border, radius or padding, so the page margin does the work. Order: wallet card beside the title block, then sections 40px apart (36px between sections on screen, 28px in print), then the footer.
+- **Toolbar:** screen only (`print:hidden`), above the sheet: a back link (16px arrow, the pet's name, 14px Ink Muted, Ink on hover) on the left; on the right an "Include full history ({count})" checkbox (16px, navy accent, 14px Ink) and a Primary Print button. The checkbox appears only when the pet has records; it flips `?history=1` with `router.replace` and no scroll jump, showing the new state at once and marking the label `aria-busy` while it loads.
+- **Wallet card:** true size, 125 x 88 mm (the card is `min-height` 88mm on screen and exactly 88mm tall in print), a 12px-radius data page with a 1px `rule` border. It sits in a dashed `rule-strong` cut frame (16px radius, 8px padding) with a 16px Ink Muted scissors icon on the top border at 16px from the left, and the caption "Cut out for the carrier or fridge." beneath (13px Ink Muted). It is `break-inside-avoid` and prints its fills exactly.
+  - **Identity:** the photo box beside the uppercase name (20px / 28px, 800, 0.02em) over a two-column Field grid: Species, Breed (or "—"), Sex, Age (or "Unknown").
+  - **Safety rows:** a ruled `dl` of three rows, Allergies, Medications, Conditions, each a Label-style term (92px column) and a 13px / 18px value clamped to two lines (one in print). A row shows at most 3 items, then ", +N more on the sheet"; an empty row reads "None recorded" in Ink Muted. Allergies add their severity in parentheses, medications their dose.
+  - **Status row:** a ruled row with the next due item ("Next due {title} · {date}", or "Was due" when overdue; "No due dates on file" when none) over a 12px muted "Status as of {date}", and the pet's Stamp on the right.
+  - **Foot:** the microchip strip, as on the data page. The card is a flex column in which only the safety rows shrink and clip, so overflow trims them, never the status row or the chip.
+- **Title block:** beside the card from `sm` (the card's column is 125mm plus the frame; the block takes the rest, 32px gap), stacked above it on phones with the card first at full width. "Vet summary" as the Headline (22px / 28px, 700); the pet's name in caps (15px / 700) with a 14px muted species and breed ("Breed not recorded" when absent); a 14px "As of {long date with year}"; a 13px muted "Kept by the owner in Novellia Pets. Not reviewed by a vet." Below, the **Status key**: a Label-style heading over three stacked rows, each a Stamp tilted -2 degrees above its 13px meaning: Overdue "Due date has passed", Due soon "Due within 30 days", Up to date "Not due within 30 days". The key is printed because a stamp's colour can be lost in black and white.
+- **Sections:** each is a headed `section`: a 16px / 24px, 700 heading on a 1px `rule-strong` baseline with a muted 14px count, followed by `divide-y` rows of 12px vertical padding that never split across a page. Order: Allergies & conditions, Current medications, Vaccinations, Due care, Last vet visit, Notes (only when the pet has notes), Full history (only when asked). Titles are 15px / 700 and detail lines 14px or 13px muted. Every date prints with its year (Oct 8, 2026). A severe allergy bolds its severity word; it is never red. Empty copy always says "No … recorded": "No allergies or conditions recorded.", "No current medications recorded.", "No vaccinations recorded.", "No vet visits recorded."; Due care reads "Nothing is overdue or due in the next 30 days." plus "Next up: {title} on {date}." when something is further out.
+- **Vaccinations:** the latest record per vaccine, with date, clinic and lot. From `sm` (and in print) a table: Label-style column heads Vaccine / Given / Next due / Clinic / Lot / Status, 14px (13px in print), semibold vaccine names, "—" for a missing clinic, lot or due date, a ruled row each, and a Stamp in Status ("No due date" in 13px muted when the vaccine has none). Below `sm` the same data is a stacked list: title with its Stamp on one line, then 13px muted "Given {date} · Next due {date}" and "{clinic} · Lot {lot}".
+- **Due care and last visit:** a due row is a 128px Stamp column and the title with its record type, over "Due {date}" ("Was due" when overdue). The last visit shows title and date over a Field grid of Clinic, Veterinarian and Weight, two columns, three from `sm`.
+- **Full history:** shown with `?history=1`. It starts on a new printed page, groups records by year under Label-style year headings ("Date not recorded" last), and each row is a 104px date column and the title, type, summary, status line and notes, with no Edit or Delete actions.
+- **Footer:** a ruled line with "{Pet} · Vet summary · As of {date}" on the left and "Novellia Pets" on the right, 12px Ink Muted.
+- **Print rules:** `@page` margin 12mm; the page ground is white; the top bar (`header[data-top-bar]`), the inquiry panel and the toast are hidden, and the docked panel's right padding is removed; the toolbar is hidden. Rows and the card never break across pages. Meaning is carried by rules, words and the printed Stamp key, never by fills: the card and sheet are white with 1px rules, and Danger red stays out of it. The document title, "{Pet} vet summary · {date}", becomes the PDF's file name.
+- **Entry points:** the pet header's Secondary "Vet summary" button and the inquiry panel's navigate action ("Opened {Pet}'s vet summary").
+
 ### Empty and first-run states
 
 Dashed `rule-strong` border for "No pets match these filters" and "No records match these filters", each with a Clear filters link. A blank data page with a dashed photo placeholder and the three stamps shows when no pets exist. A pet with no records shows "No records yet for {name}" with one secondary button per record type. The all-clear row pairs an Up to date stamp (tilted -3 degrees) with a sentence stating the next due item. The inquiry panel's empty state is a list of suggested questions (see Inquiry panel).
@@ -421,7 +444,7 @@ Dashed `rule-strong` border for "No pets match these filters" and "No records ma
 ### Don't:
 
 - **Don't** use stat-card counts or charts to summarise status; counts sit as muted numerals beside headings and tabs.
-- **Don't** add paw-print decoration, guilloche patterns, or stamps used as ornament; a stamp must be a real status.
+- **Don't** add guilloche patterns or stamps used as ornament; a stamp must be a real status.
 - **Don't** reach for a modal outside the dialog pattern: add and edit dialogs are route-backed (their URL also works as a full page), the only route-less dialog is a delete confirmation, and confirmation after an action is the toast. The inquiry panel is not a modal: it leaves the page usable, and its confirmations live in its transcript.
 - **Don't** colour buttons, headings or backgrounds in the status inks, or use red and violet for anything but state; the one exception is red as Danger on destructive actions and form errors.
 - **Don't** use gold as a fill or border on a data page.

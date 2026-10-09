@@ -147,6 +147,26 @@ html:has(dialog[open]) {
   overflow: hidden;
 }
 
+/* The vet summary prints as a document: no app chrome, white paper. */
+@page {
+  margin: 12mm;
+}
+
+@media print {
+  html {
+    background: #fff;
+  }
+
+  header[data-top-bar],
+  #chat-panel {
+    display: none !important;
+  }
+
+  [data-app-shell] {
+    padding-right: 0 !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

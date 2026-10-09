@@ -63,6 +63,15 @@ export const NavigateTargetSchema = z.discriminatedUnion("page", [
   z
     .object({ page: z.literal("editRecord"), petId: id, recordId: id })
     .describe("Edit-record form"),
+  z
+    .object({
+      page: z.literal("summary"),
+      petId: id,
+      history: z.boolean().optional(),
+    })
+    .describe(
+      "Printable vet summary for a new vet, boarding desk or sitter; history adds every record",
+    ),
 ]);
 export type NavigateTarget = z.infer<typeof NavigateTargetSchema>;
 export const NavigateInputSchema = z.object({ target: NavigateTargetSchema });
@@ -90,5 +99,7 @@ export function hrefFor(target: NavigateTarget): string {
         : routes.newRecord(target.petId, target.typeId);
     case "editRecord":
       return routes.editRecord(target.petId, target.recordId);
+    case "summary":
+      return routes.petSummary(target.petId, { history: target.history });
   }
 }

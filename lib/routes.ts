@@ -39,4 +39,10 @@ export const routes = {
   ) => `/pets/${petId}/records/${recordId}/edit${filterQuery(filters)}`,
   petProfile: (petId: number) => `/pets/${petId}/profile`,
   editPet: (petId: number) => `/pets/${petId}/edit`,
+  /** Printable vet summary; `history` appends every record. */
+  petSummary: (
+    petId: number,
+    { history = false }: { history?: boolean } = {},
+  ) =>
+    history ? `/pets/${petId}/summary?history=1` : `/pets/${petId}/summary`,
 };

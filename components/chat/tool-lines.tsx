@@ -147,6 +147,8 @@ function navigatedLabel(input: unknown, petName: PetName): string | null {
       return `a new record for ${name}`;
     case "editRecord":
       return "the record editor";
+    case "summary":
+      return `${possessive} vet summary`;
     default:
       return null;
   }

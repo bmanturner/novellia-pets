@@ -68,6 +68,23 @@ export function recordSummary(record: MedicalRecord): string | null {
   return present.length > 0 ? present.join(" · ") : null;
 }
 
+/** "Due … · Ended …" for a record, or `null`; `format` renders each date. */
+export function recordStatusLine(
+  record: MedicalRecord,
+  format: (date: string) => string,
+): string | null {
+  const parts: string[] = [];
+  if (record.dueOn) parts.push(`Due ${format(record.dueOn)}`);
+  if (record.endedOn) {
+    if (record.typeId === "medication") {
+      parts.push(`Ended ${format(record.endedOn)}`);
+    } else if (record.typeId === "condition") {
+      parts.push(`Resolved ${format(record.endedOn)}`);
+    }
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 /** Distinct titles per type for autocomplete, first-seen casing, sorted. */
 export function titleSuggestions(
   records: MedicalRecord[],

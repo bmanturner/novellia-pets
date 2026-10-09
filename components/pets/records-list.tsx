@@ -13,6 +13,7 @@ import { loadPet, loadPetRecords } from "@/lib/pet-data";
 import {
   parseRecordFilters,
   RECORD_TYPE_PLURALS,
+  recordStatusLine,
   recordSummary,
 } from "@/lib/records";
 import { routes } from "@/lib/routes";
@@ -24,19 +25,6 @@ type Filters = { type?: MedicalRecordTypeId; q?: string };
 
 const SMALL_CAPS =
   "text-[11px] leading-4 font-semibold tracking-[0.08em] text-ink-muted uppercase";
-
-function statusLine(record: MedicalRecord, today: string): string | null {
-  const parts: string[] = [];
-  if (record.dueOn) parts.push(`Due ${formatDate(record.dueOn, today)}`);
-  if (record.endedOn) {
-    if (record.typeId === "medication") {
-      parts.push(`Ended ${formatDate(record.endedOn, today)}`);
-    } else if (record.typeId === "condition") {
-      parts.push(`Resolved ${formatDate(record.endedOn, today)}`);
-    }
-  }
-  return parts.length > 0 ? parts.join(" · ") : null;
-}
 
 function RecordRow({
   record,
@@ -54,7 +42,7 @@ function RecordRow({
   highlighted: boolean;
 }) {
   const summary = recordSummary(record);
-  const status = statusLine(record, today);
+  const status = recordStatusLine(record, (date) => formatDate(date, today));
   const when = record.occurredOn
     ? formatDate(record.occurredOn, today)
     : "date not recorded";
@@ -200,7 +188,9 @@ export async function PetRecords({
                   >
                     {label}
                     <span
-                      className={current ? "text-cover-muted" : "text-ink-muted"}
+                      className={
+                        current ? "text-cover-muted" : "text-ink-muted"
+                      }
                     >
                       {count}
                     </span>

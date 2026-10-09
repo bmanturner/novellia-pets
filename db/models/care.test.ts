@@ -621,6 +621,8 @@ test("getPetCare vaccinations keep the newest record per title and skip future o
       givenOn: "2026-02-01",
       dueOn: null,
       clinic: null,
+      lotNumber: null,
+      status: null,
     },
     {
       recordId: newer,
@@ -628,6 +630,8 @@ test("getPetCare vaccinations keep the newest record per title and skip future o
       givenOn: "2026-01-01",
       dueOn: "2027-01-01",
       clinic: null,
+      lotNumber: null,
+      status: "up-to-date",
     },
   ]);
 });

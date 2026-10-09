@@ -1,4 +1,4 @@
-import { ArrowLeft, Pencil, Plus } from "lucide-react";
+import { ArrowLeft, FileText, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { Field } from "@/components/field";
 import { MicrochipStrip } from "@/components/microchip-strip";
@@ -70,11 +70,13 @@ export async function PetHeaderSection({
               <Field label="Breed">{pet.breed ?? "—"}</Field>
               <Field label="Sex">{formatSex(pet.sex, pet.neutered)}</Field>
               <Field label="Age">
-                {pet.dateOfBirth ? formatAge(pet.dateOfBirth, today) : "Unknown"}
+                {pet.dateOfBirth
+                  ? formatAge(pet.dateOfBirth, today)
+                  : "Unknown"}
               </Field>
             </dl>
           </div>
-          <div className="col-span-2 flex gap-3 sm:col-span-1 sm:col-start-2 sm:justify-end">
+          <div className="col-span-2 flex flex-wrap gap-3 sm:col-span-1 sm:col-start-2 sm:justify-end">
             <Link
               href={routes.newRecord(pet.id)}
               className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md bg-cover px-4 text-[14px] font-semibold text-cover-ink transition-colors duration-150 hover:bg-cover-deep sm:flex-none"
@@ -88,6 +90,13 @@ export async function PetHeaderSection({
             >
               <Pencil className="size-4" aria-hidden />
               Edit pet
+            </Link>
+            <Link
+              href={routes.petSummary(pet.id)}
+              className="inline-flex h-10 basis-full items-center justify-center gap-2 rounded-md border border-cover/25 bg-page px-3.5 text-[14px] font-semibold text-cover transition-colors duration-150 hover:border-cover/50 hover:bg-page-tint sm:basis-auto"
+            >
+              <FileText className="size-4" aria-hidden />
+              Vet summary
             </Link>
           </div>
         </div>

@@ -17,12 +17,22 @@ export function formatDate(date: string, today: string): string {
   );
 }
 
-/** "Thursday, October 8". */
-export function formatLongDate(date: string): string {
+/** "Thursday, October 8", or "Thursday, October 8, 2026" `withYear`. */
+export function formatLongDate(date: string, withYear = false): string {
   return toDate(date).toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
+    ...(withYear && { year: "numeric" }),
+  });
+}
+
+/** "Oct 8, 2026": always with the year, for documents read out of context. */
+export function formatFullDate(date: string): string {
+  return toDate(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
 }
 

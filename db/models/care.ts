@@ -345,6 +345,7 @@ export type ActiveCondition = {
   kind: "allergy" | "condition";
   severity: "mild" | "moderate" | "severe" | null;
   reaction: string | null;
+  since: string | null;
 };
 
 export type LatestVaccination = {
@@ -353,6 +354,9 @@ export type LatestVaccination = {
   givenOn: string;
   dueOn: string | null;
   clinic: string | null;
+  lotNumber: string | null;
+  /** `null` when no next dose is recorded. */
+  status: CareStatus | null;
 };
 
 export type LastVisit = {
@@ -408,6 +412,7 @@ export async function getPetCare(
         kind: details.kind,
         severity: details.severity,
         reaction: details.reaction || null,
+        since: record.occurredOn,
       } satisfies ActiveCondition;
     })
     .sort(
@@ -436,6 +441,10 @@ export async function getPetCare(
         givenOn: record.occurredOn!,
         dueOn: record.dueOn,
         clinic: details.clinic || null,
+        lotNumber: details.lotNumber || null,
+        status: record.dueOn
+          ? statusFor(daysBetween(today, record.dueOn))
+          : null,
       } satisfies LatestVaccination;
     })
     .sort((a, b) => compareText(a.title, b.title));

@@ -35,6 +35,7 @@ export default function RootLayout({
   const content = (
     <>
       <TopBar chat={chat} />
+      {chat && <ChatPanel />}
       <div data-app-shell className="@container flex flex-1 flex-col">
         {children}
       </div>
@@ -42,7 +43,6 @@ export default function RootLayout({
       <Suspense fallback={null}>
         <NoticeToast />
       </Suspense>
-      {chat && <ChatPanel />}
     </>
   );
 

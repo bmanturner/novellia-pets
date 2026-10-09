@@ -12,9 +12,10 @@ import { Toast } from "@/components/toast";
 import { FirstRun } from "./first-run";
 import { Medications } from "./medications";
 import { NextDue } from "./next-due";
-import { PetRoster } from "./pet-roster";
+import { PetRoster, type RosterView } from "./pet-roster";
 
 const CARE_STATUSES: CareStatus[] = ["overdue", "due-soon", "up-to-date"];
+const DUE_LIMIT = 5;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -36,6 +37,19 @@ export async function Dashboard({
   const speciesId = first(params.species) || undefined;
   const status = CARE_STATUSES.find((value) => value === first(params.status));
   const loggedId = Number(first(params.logged));
+  const showAllDue = first(params.due) === "all";
+  const view: RosterView = first(params.view) === "list" ? "list" : "card";
+
+  function dueHref(all: boolean): string {
+    const next = new URLSearchParams();
+    if (query) next.set("q", query);
+    if (speciesId) next.set("species", speciesId);
+    if (status) next.set("status", status);
+    if (view === "list") next.set("view", "list");
+    if (all) next.set("due", "all");
+    const search = next.toString();
+    return search ? `/?${search}` : "/";
+  }
 
   const [all, matching, dueItems, medications, logged] = await Promise.all([
     listPetCareSummaries(householdId, today),
@@ -67,6 +81,10 @@ export async function Dashboard({
             nextBeyond={nextBeyond}
             today={today}
             scope="household"
+            limit={DUE_LIMIT}
+            expanded={showAllDue}
+            expandHref={dueHref(true)}
+            collapseHref={dueHref(false)}
           />
         </div>
         <div className="@min-[1024px]:col-start-2 @min-[1024px]:row-start-2">
@@ -78,6 +96,7 @@ export async function Dashboard({
             totalCount={all.length}
             speciesOptions={speciesOptions}
             filters={{ query, speciesId, status }}
+            view={view}
             today={today}
             inkedPetId={loggedPet ? loggedPet.pet.id : null}
           />

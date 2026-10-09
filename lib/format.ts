@@ -6,12 +6,16 @@ function toDate(date: string): Date {
   return new Date(year, month - 1, day);
 }
 
-/** "Fri, Oct 17" within the current year, "Mar 20, 2027" otherwise. */
+/**
+ * "Fri, Oct 17" for an upcoming date this year; "Mar 20, 2026" for any past
+ * date or another year, so history is never ambiguous about which year.
+ */
 export function formatDate(date: string, today: string): string {
-  const sameYear = date.slice(0, 4) === today.slice(0, 4);
+  const upcomingThisYear =
+    date >= today && date.slice(0, 4) === today.slice(0, 4);
   return toDate(date).toLocaleDateString(
     "en-US",
-    sameYear
+    upcomingThisYear
       ? { weekday: "short", month: "short", day: "numeric" }
       : { month: "short", day: "numeric", year: "numeric" },
   );

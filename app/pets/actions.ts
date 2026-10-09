@@ -17,9 +17,11 @@ import {
   updatePet,
 } from "@/db/models/pet";
 import { listSpecies } from "@/db/models/species";
+import { toLocalDate } from "@/db/models/care";
 import {
   type FormState,
   formValues,
+  futureBirthError,
   petFieldErrors,
   petInputFromForm,
   recordFieldErrors,
@@ -47,20 +49,19 @@ export async function savePetAction(
 
   const input = petInputFromForm(values);
   const parsed = PetInputSchema.safeParse(input);
-  if (!parsed.success) {
-    return {
-      values,
-      errors: petFieldErrors(parsed.error, values),
-      formError: null,
-    };
-  }
   const species = await listSpecies();
-  if (!species.some(({ id }) => id === parsed.data.speciesId)) {
-    return {
-      values,
-      errors: { speciesId: "Choose a species." },
-      formError: null,
-    };
+  const errors: Record<string, string> = {
+    ...futureBirthError(values, toLocalDate(new Date())),
+    ...(parsed.success ? {} : petFieldErrors(parsed.error, values)),
+  };
+  if (
+    parsed.success &&
+    !species.some(({ id }) => id === parsed.data.speciesId)
+  ) {
+    errors.speciesId = "Choose a species.";
+  }
+  if (Object.keys(errors).length > 0) {
+    return { values, errors, formError: null };
   }
 
   if (values.petId) {
@@ -89,7 +90,10 @@ export async function saveRecordAction(
   const petId = Number(values.petId);
 
   if (values.recordId) {
-    const existing = await getMedicalRecord(householdId, Number(values.recordId));
+    const existing = await getMedicalRecord(
+      householdId,
+      Number(values.recordId),
+    );
     if (!existing || existing.petId !== petId) {
       return {
         values,
@@ -144,7 +148,10 @@ export async function deleteRecordAction(formData: FormData): Promise<void> {
   await deleteMedicalRecord(householdId, Number(values.recordId));
   const filters = parseRecordFilters(values.filterType, values.filterQuery);
   finish(
-    withNotice(routes.petRecords(Number(values.petId), filters), "record-deleted"),
+    withNotice(
+      routes.petRecords(Number(values.petId), filters),
+      "record-deleted",
+    ),
   );
 }
 

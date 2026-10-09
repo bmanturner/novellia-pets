@@ -17,7 +17,7 @@ import {
 } from "react";
 import type { Pet } from "@/db/models/pet";
 import type { PetsUIMessage } from "@/lib/chat/agent";
-import { hrefFor, MUTATION_TOOLS } from "@/lib/chat/contract";
+import { hrefFor } from "@/lib/chat/contract";
 import { inkPet } from "@/lib/ink";
 
 /** `art` is the species stamp art URL resolved on the server (`null` until it exists). */
@@ -40,18 +40,12 @@ type ChatPanelContextValue = {
   unregisterPet(petId: number): void;
 };
 
-const PHONE_QUERY = "(max-width: 639.98px)";
+export const PHONE_QUERY = "(max-width: 639.98px)";
 
 function isOnPetPage(petId: number): boolean {
   const path = window.location.pathname;
   const base = `/pets/${petId}`;
   return path === base || path.startsWith(`${base}/`);
-}
-
-function numericField(value: unknown, key: string): number | null {
-  if (typeof value !== "object" || value === null) return null;
-  const field = (value as Record<string, unknown>)[key];
-  return typeof field === "number" ? field : null;
 }
 
 /**
@@ -75,6 +69,20 @@ class ChatBridge {
   get contextPetId(): number | undefined {
     return this.#contextPet?.id;
   }
+}
+
+/** True when the last step of the last assistant message holds an approved tool call. */
+function hasApprovedResponse(messages: PetsUIMessage[]): boolean {
+  const last = messages.at(-1);
+  if (last?.role !== "assistant") return false;
+  const stepStart = last.parts.findLastIndex(
+    (part) => part.type === "step-start",
+  );
+  return last.parts.slice(stepStart + 1).some((part) => {
+    if (!part.type.startsWith("tool-") || !("approval" in part)) return false;
+    const approval = part.approval as { approved?: boolean } | undefined;
+    return approval?.approved === true;
+  });
 }
 
 /** Messages live only in this instance; nothing is persisted. */
@@ -107,10 +115,12 @@ function createPetsChat(
         };
       },
     }),
-    // Resend after a navigate output or an approval answer is added.
+    // Resend after a navigate output or an approved change. A pure denial
+    // stays in history and rides along with the owner's next message.
     sendAutomaticallyWhen: (options) =>
       lastAssistantMessageIsCompleteWithToolCalls(options) ||
-      lastAssistantMessageIsCompleteWithApprovalResponses(options),
+      (lastAssistantMessageIsCompleteWithApprovalResponses(options) &&
+        hasApprovedResponse(options.messages)),
     onToolCall({ toolCall }) {
       if (toolCall.dynamic || toolCall.toolName !== "navigate") return;
       const href = hrefFor(toolCall.input.target);
@@ -123,38 +133,23 @@ function createPetsChat(
       });
       closeOnPhone();
     },
-    onFinish({ message }) {
+    // The server sends `data-changed` as soon as a write succeeds, so the
+    // page catches up while the agent is still writing its reply.
+    onData(part) {
+      if (part.type !== "data-changed") return;
+      const { tool, petId } = part.data;
       const router = bridge.router;
-      const inkedPets = new Set<number>();
-      let wroteData = false;
-      let deletedViewedPet = false;
-
-      for (const part of message.parts) {
-        if (!part.type.startsWith("tool-")) continue;
-        if (!("state" in part) || part.state !== "output-available") continue;
-        const tool = part.type.slice(5);
-        if (!(MUTATION_TOOLS as readonly string[]).includes(tool)) continue;
-        wroteData = true;
-
-        if (tool === "createMedicalRecord" || tool === "updateMedicalRecord") {
-          const petId = numericField(
-            "output" in part ? part.output : null,
-            "petId",
-          );
-          if (petId !== null) inkedPets.add(petId);
-        } else if (tool === "deletePet") {
-          const petId = numericField(
-            "input" in part ? part.input : null,
-            "petId",
-          );
-          if (petId !== null && isOnPetPage(petId)) deletedViewedPet = true;
-        }
+      if (tool === "deletePet" && petId !== null && isOnPetPage(petId)) {
+        router.push("/");
+        return;
       }
-
-      if (!wroteData) return;
-      if (deletedViewedPet) router.push("/");
-      else router.refresh();
-      for (const petId of inkedPets) inkPet(petId);
+      router.refresh();
+      if (
+        petId !== null &&
+        (tool === "createMedicalRecord" || tool === "updateMedicalRecord")
+      ) {
+        inkPet(petId);
+      }
     },
   });
   return chat;

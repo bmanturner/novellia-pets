@@ -35,7 +35,8 @@ import {
 import { nullableDate, nullableText } from "@/db/models/shared";
 import { listSpecies } from "@/db/models/species";
 import type { MedicalRecordTypeId } from "@/db/models/medical-record-type";
-import type { MutationToolName } from "@/lib/chat/contract";
+import type { ConfirmField, MutationToolName } from "@/lib/chat/contract";
+import { formatFullDate } from "@/lib/format";
 
 /**
  * One definition per app query/mutation, shared by the chat agent and the MCP
@@ -53,6 +54,11 @@ type WriteToolDef<S extends z.ZodType> = ToolDef<S> & {
   destructive: boolean;
   /** Question shown to the user before the write runs. Never throws. */
   confirmMessage: (ctx: ToolContext, input: z.output<S>) => Promise<string>;
+  /** What will be written, as label/value rows for the confirmation card. Never throws. */
+  confirmFields: (
+    ctx: ToolContext,
+    input: z.output<S>,
+  ) => Promise<ConfirmField[]>;
 };
 
 /** Loosely typed view used by the adapters; method syntax keeps it assignable from every concrete def. */
@@ -64,6 +70,7 @@ export type AnyToolDef = {
 export type AnyWriteToolDef = AnyToolDef & {
   destructive: boolean;
   confirmMessage(ctx: ToolContext, input: unknown): Promise<string>;
+  confirmFields(ctx: ToolContext, input: unknown): Promise<ConfirmField[]>;
 };
 
 const readTool = <S extends z.ZodType>(def: ToolDef<S>) => def;
@@ -76,6 +83,13 @@ const writeTool = <S extends z.ZodType>(
       return await def.confirmMessage(ctx, input);
     } catch {
       return "Make this change?";
+    }
+  },
+  confirmFields: async (ctx, input) => {
+    try {
+      return await def.confirmFields(ctx, input);
+    } catch {
+      return [];
     }
   },
 });
@@ -259,6 +273,132 @@ function recordChangePhrases(
   return phrases;
 }
 
+const CLEARED = "Cleared";
+
+function capitalize(text: string): string {
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+}
+
+/** Short row labels for the confirmation card, by record type. */
+const RECORD_FIELD_LABELS: Record<
+  MedicalRecordTypeId,
+  { occurredOn: string; endedOn: string; dueOn: string }
+> = {
+  vaccination: { occurredOn: "Given", endedOn: "Ended", dueOn: "Next due" },
+  medication: { occurredOn: "Started", endedOn: "Ended", dueOn: "Refill due" },
+  visit: { occurredOn: "Visit", endedOn: "Ended", dueOn: "Follow-up due" },
+  condition: { occurredOn: "Onset", endedOn: "Resolved", dueOn: "Due" },
+};
+
+/** Detail fields in reading order, with their confirmation labels. */
+const DETAIL_FIELD_ORDER: Record<MedicalRecordTypeId, [string, string][]> = {
+  vaccination: [
+    ["clinic", "Clinic"],
+    ["lotNumber", "Lot number"],
+  ],
+  medication: [
+    ["dosage", "Dosage"],
+    ["frequency", "Frequency"],
+    ["prescribedBy", "Prescribed by"],
+  ],
+  visit: [
+    ["clinic", "Clinic"],
+    ["veterinarian", "Veterinarian"],
+    ["weight", "Weight"],
+  ],
+  condition: [
+    ["kind", "Kind"],
+    ["severity", "Severity"],
+    ["reaction", "Reaction"],
+  ],
+};
+
+/** "Vaccination · Rabies (1-year)". */
+function recordIdentity(record: {
+  typeId: MedicalRecordTypeId;
+  details: object;
+  title: string;
+}): string {
+  return `${capitalize(recordLabel(record))} · ${record.title}`;
+}
+
+/**
+ * Dates and details of a record as confirmation rows. A create lists what is
+ * set (and "Not recorded" for a vaccination's missing next-due date); an
+ * update lists only what the patch touches, "Cleared" for null.
+ */
+function recordValueFields(
+  typeId: MedicalRecordTypeId,
+  values: {
+    occurredOn?: string | null;
+    endedOn?: string | null;
+    dueOn?: string | null;
+    details?: object;
+  },
+  mode: "create" | "update",
+): ConfirmField[] {
+  const fields: ConfirmField[] = [];
+  const add = (label: string, value: unknown, text: (v: unknown) => string) => {
+    if (value === undefined) return;
+    if (value === null || value === "") {
+      if (mode === "update") fields.push({ label, value: CLEARED });
+      return;
+    }
+    fields.push({ label, value: text(value) });
+  };
+  const labels = RECORD_FIELD_LABELS[typeId];
+  add(labels.occurredOn, values.occurredOn, (v) => formatFullDate(String(v)));
+  add(labels.endedOn, values.endedOn, (v) => formatFullDate(String(v)));
+  if (mode === "create" && typeId === "vaccination" && !values.dueOn) {
+    fields.push({ label: labels.dueOn, value: "Not recorded" });
+  } else {
+    add(labels.dueOn, values.dueOn, (v) => formatFullDate(String(v)));
+  }
+  const details = values.details as Record<string, unknown> | undefined;
+  const known = DETAIL_FIELD_ORDER[typeId];
+  const knownKeys = new Set(known.map(([key]) => key));
+  const ordered: [string, string][] = [
+    ...known,
+    ...Object.keys(details ?? {})
+      .filter((key) => !knownKeys.has(key))
+      .map((key): [string, string] => [
+        key,
+        capitalize(DETAIL_LABELS[key] ?? key),
+      ]),
+  ];
+  for (const [key, label] of ordered) {
+    // A condition's kind is already part of the Record row on create.
+    if (mode === "create" && key === "kind") continue;
+    add(label, details?.[key], detailValue);
+  }
+  return fields;
+}
+
+/**
+ * The existing title (same pet and type) a new record's title nearly matches
+ * without being identical: differing only in case/spacing, or one a prefix of
+ * the other before a space or "(" ("Rabies" vs "Rabies (1-year)"). An exact
+ * match continues that item, so it returns undefined. `sameItem` is true when
+ * the care queries still treat the two as one item (case/spacing only).
+ */
+export function findNearTitle(
+  existingTitles: string[],
+  title: string,
+): { title: string; sameItem: boolean } | undefined {
+  if (existingTitles.includes(title)) return undefined;
+  const key = title.trim().toLowerCase();
+  const near = (a: string, b: string) =>
+    a.length > b.length && a.startsWith(b) && /^[\s(]/.test(a.slice(b.length));
+  for (const existing of existingTitles) {
+    const other = existing.trim().toLowerCase();
+    if (other === key) return { title: existing, sameItem: true };
+    if (near(other, key) || near(key, other)) {
+      return { title: existing, sameItem: false };
+    }
+  }
+  return undefined;
+}
+
 const id = z.number().int().positive();
 const DATES = "Dates are YYYY-MM-DD.";
 const PATCH =
@@ -375,6 +515,30 @@ export const writeTools = {
       ].filter(Boolean);
       return `Add ${input.name}, ${article} ${species}${facts.length ? ` (${facts.join(", ")})` : ""}?`;
     },
+    confirmFields: async (_ctx, input) => [
+      { label: "Pet", value: input.name },
+      {
+        label: "Species",
+        value: capitalize(await speciesName(input.speciesId)),
+      },
+      ...(input.breed ? [{ label: "Breed", value: input.breed }] : []),
+      ...(input.sex !== "unknown"
+        ? [
+            {
+              label: "Sex",
+              value: capitalize(
+                sexWords(input.sex, input.neutered) ?? input.sex,
+              ),
+            },
+          ]
+        : []),
+      ...(input.dateOfBirth
+        ? [{ label: "Born", value: formatFullDate(input.dateOfBirth) }]
+        : []),
+      ...(input.microchipId
+        ? [{ label: "Microchip", value: input.microchipId }]
+        : []),
+    ],
   }),
   updatePet: writeTool({
     description: `Change a pet's profile. ${PATCH} Call listSpecies for valid speciesId values. ${DATES}`,
@@ -437,6 +601,53 @@ export const writeTools = {
       const sentence = joinWords(clauses);
       return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}?`;
     },
+    confirmFields: async (ctx, { petId, changes }) => {
+      const pet = await getPet(ctx.householdId, petId);
+      const fields: ConfirmField[] = [
+        { label: "Pet", value: pet?.name ?? `pet ${petId}` },
+      ];
+      const change = (
+        label: string,
+        value: unknown,
+        text: (v: string) => string = String,
+      ) => {
+        if (value === undefined) return;
+        fields.push({
+          label,
+          value: value === null ? CLEARED : text(String(value)),
+        });
+      };
+      change("Name", changes.name);
+      if (changes.speciesId) {
+        fields.push({
+          label: "Species",
+          value: capitalize(await speciesName(changes.speciesId)),
+        });
+      }
+      change("Breed", changes.breed);
+      change("Sex", changes.sex, capitalize);
+      if (changes.neutered !== undefined) {
+        const sex = changes.sex ?? pet?.sex;
+        const status =
+          changes.neutered === null
+            ? null
+            : !changes.neutered
+              ? "Intact"
+              : sex === "female"
+                ? "Spayed"
+                : "Neutered";
+        change("Spay/neuter", status);
+      }
+      change("Born", changes.dateOfBirth, formatFullDate);
+      change("Microchip", changes.microchipId);
+      if (changes.notes !== undefined) {
+        fields.push({
+          label: "Notes",
+          value: changes.notes === null ? CLEARED : "Updated",
+        });
+      }
+      return fields;
+    },
   }),
   deletePet: writeTool({
     description:
@@ -457,6 +668,14 @@ export const writeTools = {
             ? " and their 1 medical record"
             : ` and all ${count} of their medical records`;
       return `Delete ${name}${records}? This can't be undone.`;
+    },
+    confirmFields: async (ctx, { petId }) => {
+      const name = await petName(ctx, petId);
+      const count = (await listMedicalRecords(ctx.householdId, petId)).length;
+      return [
+        { label: "Pet", value: name },
+        ...(count ? [{ label: "Records", value: String(count) }] : []),
+      ];
     },
   }),
   createMedicalRecord: writeTool({
@@ -502,6 +721,27 @@ export const writeTools = {
         }
       }
     },
+    confirmFields: async (ctx, { petId, record }) => {
+      const existing = (await listMedicalRecords(ctx.householdId, petId))
+        .filter((r) => r.typeId === record.typeId)
+        .map((r) => r.title);
+      const near = findNearTitle(existing, record.title);
+      return [
+        { label: "Pet", value: await petName(ctx, petId) },
+        { label: "Record", value: recordIdentity(record) },
+        ...(near
+          ? [
+              {
+                label: "Existing item",
+                value: near.sameItem
+                  ? `${near.title}: same item, but typed differently`
+                  : `${near.title}: this won't replace its due date`,
+              },
+            ]
+          : []),
+        ...recordValueFields(record.typeId, record, "create"),
+      ];
+    },
   }),
   updateMedicalRecord: writeTool({
     description: `Change a medical record. ${PATCH} The record type can't change; delete it and create a new one instead. Detail fields depend on the type:\n${RECORD_DETAILS} ${DATES}`,
@@ -534,6 +774,26 @@ export const writeTools = {
       const phrases = recordChangePhrases(record.typeId, changes);
       return `Change ${name}'s ${recordLabel(record)} "${record.title}": ${joinWords(phrases) || "its details"}?`;
     },
+    confirmFields: async (ctx, { recordId, changes }) => {
+      const record = await getMedicalRecord(ctx.householdId, recordId);
+      if (!record) return [];
+      return [
+        { label: "Pet", value: await petName(ctx, record.petId) },
+        { label: "Record", value: recordIdentity(record) },
+        ...(changes.title === undefined
+          ? []
+          : [{ label: "Title", value: changes.title }]),
+        ...(changes.notes === undefined
+          ? []
+          : [
+              {
+                label: "Notes",
+                value: changes.notes === null ? CLEARED : "Updated",
+              },
+            ]),
+        ...recordValueFields(record.typeId, changes, "update"),
+      ];
+    },
   }),
   deleteMedicalRecord: writeTool({
     description: "Delete a medical record. This can't be undone.",
@@ -552,6 +812,22 @@ export const writeTools = {
       const name = await petName(ctx, record.petId);
       const from = record.occurredOn ? ` from ${day(record.occurredOn)}` : "";
       return `Delete ${name}'s ${recordLabel(record)} "${record.title}"${from}? This can't be undone.`;
+    },
+    confirmFields: async (ctx, { recordId }) => {
+      const record = await getMedicalRecord(ctx.householdId, recordId);
+      if (!record) return [];
+      return [
+        { label: "Pet", value: await petName(ctx, record.petId) },
+        { label: "Record", value: recordIdentity(record) },
+        ...(record.occurredOn
+          ? [
+              {
+                label: RECORD_FIELD_LABELS[record.typeId].occurredOn,
+                value: formatFullDate(record.occurredOn),
+              },
+            ]
+          : []),
+      ];
     },
   }),
 } satisfies Record<MutationToolName, unknown>;

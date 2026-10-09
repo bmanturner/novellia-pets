@@ -24,6 +24,7 @@ export function PetFilters({
   const urlQuery = searchParams.get("q") ?? "";
   const urlSpecies = searchParams.get("species") ?? "";
   const status = searchParams.get("status");
+  const view = searchParams.get("view");
   // The last query this component put in the URL, to tell its own updates
   // apart from outside ones (Back/Forward, Clear filters).
   const sentQuery = useRef(urlQuery);
@@ -81,6 +82,7 @@ export function PetFilters({
       }}
     >
       {status && <input type="hidden" name="status" value={status} />}
+      {view === "list" && <input type="hidden" name="view" value="list" />}
       <label className="relative min-w-0 flex-1">
         <span className="sr-only">
           Search pets by name, breed or microchip number

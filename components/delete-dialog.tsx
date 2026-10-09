@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useId, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
 const TRIGGERS = {
-  row: "inline-flex h-8 items-center rounded-md px-3 text-[13px] font-semibold text-danger hover:bg-danger/[0.06]",
+  row: "inline-flex h-11 items-center rounded-md px-4 text-[13px] font-semibold text-danger hover:bg-danger/[0.06] sm:h-8 sm:px-3",
   page: "inline-flex h-10 items-center gap-2 rounded-md border border-danger/40 bg-page px-3.5 text-[14px] font-semibold text-danger transition-colors duration-150 hover:border-danger/70 hover:bg-danger/[0.06]",
 };
 

@@ -19,10 +19,12 @@ export function ChatMessage({
   message,
   messages,
   streaming,
+  stopped,
 }: {
   message: PetsUIMessage;
   messages: PetsUIMessage[];
   streaming: boolean;
+  stopped?: boolean;
 }) {
   const petName = usePetName(messages);
 
@@ -33,10 +35,13 @@ export function ChatMessage({
     if (!text) return null;
     const first = messages[0]?.id === message.id;
     return (
-      <div
-        className={`text-[15px] leading-6 font-semibold break-words whitespace-pre-wrap text-ink ${first ? "" : "border-t border-rule pt-5"}`}
-      >
-        {text}
+      <div className={first ? "" : "mt-2 border-t border-rule pt-6"}>
+        <p className="mb-1 text-[11px] leading-4 font-semibold tracking-[0.08em] text-ink-muted uppercase">
+          You asked
+        </p>
+        <p className="text-[15px] leading-6 font-semibold break-words whitespace-pre-wrap text-ink">
+          {text}
+        </p>
       </div>
     );
   }
@@ -58,6 +63,9 @@ export function ChatMessage({
     (lastTool.state === "approval-requested" ||
       lastTool.state === "approval-responded");
   const showActivity = streaming && lastPart?.type !== "text" && !confirming;
+  const hasText = message.parts.some(
+    (part) => part.type === "text" && part.text.trim().length > 0,
+  );
 
   return (
     <div className="space-y-3 text-[15px] leading-6 break-words text-ink">
@@ -71,6 +79,12 @@ export function ChatMessage({
           return <NavigatedLine key={index} part={tool} petName={petName} />;
         }
         if (isMutationTool(tool.name)) {
+          const superseded =
+            tool.state === "output-error" &&
+            message.parts
+              .slice(index + 1)
+              .some((later) => readToolPart(later)?.name === tool.name);
+          if (superseded) return null;
           return (
             <MutationLine
               key={index}
@@ -86,7 +100,8 @@ export function ChatMessage({
       {showActivity && (
         <ActivityLine phrase={activityPhrase(lastRunning, petName)} />
       )}
-      <Citations records={collectCitations(message)} />
+      {hasText && <Citations records={collectCitations(message)} />}
+      {stopped && <p className="text-[13px] text-ink-muted">Stopped.</p>}
     </div>
   );
 }

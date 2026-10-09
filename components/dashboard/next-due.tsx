@@ -59,12 +59,16 @@ function DueRow({
       <div className="col-span-2 row-start-2 flex min-w-0 items-center gap-3 md:col-span-1 md:col-auto md:row-auto">
         {scope === "household" ? (
           <>
-            <SpeciesMark species={item.pet.species} size="row" onCover={urgent} />
+            <SpeciesMark
+              species={item.pet.species}
+              size="row"
+              onCover={urgent}
+            />
             <div className="min-w-0">
-              <p className="truncate text-[16px] leading-6">
+              <p className="truncate text-[16px] leading-6 max-sm:-my-3 max-sm:py-3">
                 <Link
                   href={routes.pet(item.pet.id)}
-                  className="font-bold underline-offset-[0.2em] hover:underline"
+                  className="font-bold underline-offset-[0.2em] hover:underline max-sm:-my-2.5 max-sm:inline-block max-sm:py-2.5"
                 >
                   {item.pet.name}
                 </Link>{" "}
@@ -135,13 +139,27 @@ export function NextDue({
   nextBeyond,
   today,
   scope,
+  limit,
+  expanded = false,
+  expandHref,
+  collapseHref,
 }: {
   items: DueItem[];
   /** The soonest due item past the 30-day window, for the all-clear state. */
   nextBeyond: DueItem | null;
   today: string;
   scope: "household" | "pet";
+  /** Rows shown before "Show N more"; omit to show every row. */
+  limit?: number;
+  expanded?: boolean;
+  expandHref?: string;
+  collapseHref?: string;
 }) {
+  const overLimit = limit !== undefined && items.length > limit;
+  const capped = overLimit && !expanded && expandHref !== undefined;
+  const visible = capped ? items.slice(0, limit) : items;
+  const linkClass =
+    "mt-3 inline-flex h-11 items-center text-[14px] font-semibold text-cover underline sm:h-9";
   return (
     <section aria-labelledby="next-due-heading">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -160,17 +178,33 @@ export function NextDue({
       </div>
 
       {items.length > 0 ? (
-        <ol className="divide-y divide-rule overflow-hidden rounded-xl border border-rule bg-page">
-          {items.map((item, index) => (
-            <DueRow
-              key={item.recordId}
-              item={item}
-              today={today}
-              urgent={index === 0}
-              scope={scope}
-            />
-          ))}
-        </ol>
+        <>
+          <ol className="divide-y divide-rule overflow-hidden rounded-xl border border-rule bg-page">
+            {visible.map((item, index) => (
+              <DueRow
+                key={item.recordId}
+                item={item}
+                today={today}
+                urgent={index === 0}
+                scope={scope}
+              />
+            ))}
+          </ol>
+          {capped && expandHref && (
+            <Link href={expandHref} scroll={false} className={linkClass}>
+              Show {items.length - visible.length} more
+            </Link>
+          )}
+          {overLimit && expanded && collapseHref && (
+            <Link href={collapseHref} scroll={false} className={linkClass}>
+              Show fewer
+            </Link>
+          )}
+        </>
+      ) : !nextBeyond ? (
+        <p className="rounded-xl border border-rule bg-page px-5 py-5 text-[16px] font-semibold text-ink-muted">
+          No due dates recorded yet.
+        </p>
       ) : (
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-rule bg-page px-5 py-5">
           <Stamp status="up-to-date" tilt={-3} />
@@ -179,33 +213,29 @@ export function NextDue({
               Nothing is overdue or due in the next 30 days.
             </p>
             <p className="text-[14px] text-ink-muted">
-              {nextBeyond ? (
-                scope === "household" ? (
-                  <>
-                    Next up: {nextBeyond.title} for{" "}
-                    <Link
-                      href={routes.pet(nextBeyond.pet.id)}
-                      className="font-semibold text-ink underline"
-                    >
-                      {nextBeyond.pet.name}
-                    </Link>{" "}
-                    on{" "}
-                    <time dateTime={nextBeyond.dueOn}>
-                      {formatDate(nextBeyond.dueOn, today)}
-                    </time>
-                    .
-                  </>
-                ) : (
-                  <>
-                    Next up: {nextBeyond.title} on{" "}
-                    <time dateTime={nextBeyond.dueOn}>
-                      {formatDate(nextBeyond.dueOn, today)}
-                    </time>
-                    .
-                  </>
-                )
+              {scope === "household" ? (
+                <>
+                  Next up: {nextBeyond.title} for{" "}
+                  <Link
+                    href={routes.pet(nextBeyond.pet.id)}
+                    className="font-semibold text-ink underline"
+                  >
+                    {nextBeyond.pet.name}
+                  </Link>{" "}
+                  on{" "}
+                  <time dateTime={nextBeyond.dueOn}>
+                    {formatDate(nextBeyond.dueOn, today)}
+                  </time>
+                  .
+                </>
               ) : (
-                "No upcoming due dates are on file."
+                <>
+                  Next up: {nextBeyond.title} on{" "}
+                  <time dateTime={nextBeyond.dueOn}>
+                    {formatDate(nextBeyond.dueOn, today)}
+                  </time>
+                  .
+                </>
               )}
             </p>
           </div>

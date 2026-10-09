@@ -38,6 +38,7 @@ export function PetTabs({
             <li key={key}>
               <Link
                 href={href}
+                scroll={false}
                 aria-current={isCurrent ? "page" : undefined}
                 className={[
                   "relative inline-flex h-11 items-center gap-1.5 text-[15px]",

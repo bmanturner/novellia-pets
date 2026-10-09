@@ -369,7 +369,8 @@ export type LastVisit = {
 };
 
 export type PetCare = {
-  status: CareStatus;
+  /** Worst due status; `null` when no live record carries a due date. */
+  status: CareStatus | null;
   /** This pet's overdue and due-soon items, most urgent first. */
   dueItems: DueItem[];
   /** The soonest item due beyond the due-soon window. */
@@ -483,7 +484,7 @@ export async function getPetCare(
   }
 
   return {
-    status: dueItems[0]?.status ?? "up-to-date",
+    status: live.length === 0 ? null : (dueItems[0]?.status ?? "up-to-date"),
     dueItems,
     nextBeyond: live.find((item) => item.status === "up-to-date") ?? null,
     medications: activeMedications(petsById, records, today),

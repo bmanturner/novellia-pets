@@ -1,8 +1,12 @@
 import type { z } from "zod";
-import type { MedicalRecord, MedicalRecordInput } from "@/db/models/medical-record";
+import type {
+  MedicalRecord,
+  MedicalRecordInput,
+} from "@/db/models/medical-record";
 import { MEDICAL_RECORD_TYPE_IDS } from "@/db/models/medical-record-type";
 import type { MedicalRecordTypeId } from "@/db/models/medical-record-type";
 import type { Pet, PetInput } from "@/db/models/pet";
+import { isIsoDate } from "@/lib/dates";
 
 export type FormValues = Record<string, string>;
 export type FormState = {
@@ -27,7 +31,7 @@ const FIELD_MESSAGES: Record<string, string> = {
   speciesId: "Choose a species.",
   sex: "Choose a sex.",
   breed: "Keep the breed under 100 characters.",
-  microchipId: "Keep the microchip number under 50 characters.",
+  microchipId: "Enter 9 to 15 digits. Spaces and dashes are fine.",
   notes: "Keep notes under 2,000 characters.",
   typeId: "Choose a record type.",
   title: "Enter a title (up to 200 characters).",
@@ -43,6 +47,14 @@ const FIELD_MESSAGES: Record<string, string> = {
   severity: "Choose a severity.",
 };
 
+/** A blank title says what to enter for the record's type. */
+const TITLE_REQUIRED: Record<string, string> = {
+  vaccination: "Enter the vaccine name.",
+  medication: "Enter the medication name.",
+  visit: "Enter what the visit was for.",
+  condition: "Enter the allergy or condition.",
+};
+
 function fieldOf(path: PropertyKey[]): string {
   const [head, second] = path.map(String);
   if (head !== "details") return head ?? "";
@@ -50,18 +62,22 @@ function fieldOf(path: PropertyKey[]): string {
 }
 
 /** First issue per field, as a user-facing message. */
-function fieldErrors(
-  error: z.ZodError,
-  v: FormValues,
-): Record<string, string> {
+function fieldErrors(error: z.ZodError, v: FormValues): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const issue of error.issues) {
     const field = fieldOf(issue.path);
     if (field in errors) continue;
-    if (issue.code === "custom") {
+    if (field === "title") {
+      errors[field] =
+        issue.code === "too_big"
+          ? "Keep the title under 200 characters."
+          : (TITLE_REQUIRED[v.typeId ?? ""] ?? FIELD_MESSAGES.title);
+    } else if (issue.code === "custom") {
       errors[field] = issue.message;
     } else if (DATE_FIELDS.has(field)) {
-      errors[field] = v[field]?.trim() ? "Enter a valid date." : "Enter the date.";
+      errors[field] = v[field]?.trim()
+        ? "Enter a valid date."
+        : "Enter the date.";
     } else {
       errors[field] = FIELD_MESSAGES[field] ?? issue.message;
     }
@@ -71,6 +87,17 @@ function fieldErrors(
 
 export const petFieldErrors = fieldErrors;
 export const recordFieldErrors = fieldErrors;
+
+/** A birth date after `today`, which the schema alone can't know about. */
+export function futureBirthError(
+  v: FormValues,
+  today: string,
+): Record<string, string> {
+  const born = v.dateOfBirth?.trim();
+  return born && isIsoDate(born) && born > today
+    ? { dateOfBirth: "Date of birth can't be in the future." }
+    : {};
+}
 
 export function petInputFromForm(v: FormValues): PetInput {
   return {
@@ -173,10 +200,7 @@ export function recordInputFromForm(v: FormValues): MedicalRecordInput {
         details: {
           kind: get("kind") as "allergy" | "condition",
           severity: (get("severity") || null) as
-            | "mild"
-            | "moderate"
-            | "severe"
-            | null,
+            "mild" | "moderate" | "severe" | null,
           reaction: get("reaction"),
         },
       };

@@ -26,7 +26,7 @@ export function EmptyState({
   onAsk: (text: string) => void;
 }) {
   return (
-    <div>
+    <div className="pt-6">
       <h2 className="text-[22px] leading-tight font-bold text-ink">
         Ask about your pets
       </h2>

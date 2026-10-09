@@ -13,6 +13,10 @@ export const MUTATION_TOOLS = [
 ] as const;
 export type MutationToolName = (typeof MUTATION_TOOLS)[number];
 
+export type ConfirmField = { label: string; value: string };
+/** The server-streamed description of a pending change, shown before the owner confirms. */
+export type ConfirmationData = { text: string; fields: ConfirmField[] };
+
 /** A record the agent cited for an answer; output of the chat-only `citeRecords` tool. */
 export type CitedRecord = {
   id: number;

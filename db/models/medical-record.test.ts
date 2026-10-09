@@ -4,6 +4,7 @@ import { getCurrentHouseholdId } from "./household";
 import {
   createMedicalRecord,
   deleteMedicalRecord,
+  getLatestMedicalRecordByTitle,
   getMedicalRecord,
   filterMedicalRecords,
   listMedicalRecords,
@@ -93,7 +94,44 @@ test("the end date can't be before the start date", () => {
 
   expect(result.error?.issues.map((issue) => issue.path)).toEqual([
     ["endedOn"],
+    ["occurredOn"],
   ]);
+});
+
+test("the latest record by title matches case-insensitively, newest first, in scope", async () => {
+  await createMedicalRecord(householdId, petId, {
+    ...rabies,
+    occurredOn: "2025-01-10",
+    details: { clinic: "Old Vet" },
+  });
+  await createMedicalRecord(householdId, petId, rabies);
+
+  expect(
+    (
+      await getLatestMedicalRecordByTitle(
+        householdId,
+        petId,
+        "vaccination",
+        " RABIES ",
+      )
+    )?.occurredOn,
+  ).toBe("2026-01-10");
+  expect(
+    await getLatestMedicalRecordByTitle(
+      householdId,
+      petId,
+      "medication",
+      "Rabies",
+    ),
+  ).toBeUndefined();
+  expect(
+    await getLatestMedicalRecordByTitle(
+      otherHouseholdId,
+      petId,
+      "vaccination",
+      "Rabies",
+    ),
+  ).toBeUndefined();
 });
 
 test("records are invisible and immutable from another household", async () => {

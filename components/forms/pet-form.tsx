@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { savePetAction } from "@/app/pets/actions";
 import {
   FormField,
@@ -18,17 +18,28 @@ export function PetForm({
   initialValues,
   species,
   cancelHref,
+  today,
 }: {
   mode: "create" | "edit";
   petId?: number;
   initialValues: FormValues;
   species: { id: string; name: string }[];
   cancelHref: string;
+  today: string;
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
     savePetAction,
     { values: initialValues, errors: {}, formError: null },
   );
+  // React resets the form after every action, and uncontrolled selects do not
+  // re-apply an unchanged defaultValue. Remounting the fields per result makes
+  // every control show what the server echoed back.
+  const [seenState, setSeenState] = useState(state);
+  const [resultVersion, setResultVersion] = useState(0);
+  if (seenState !== state) {
+    setSeenState(state);
+    setResultVersion(resultVersion + 1);
+  }
   const { values, errors } = state;
 
   return (
@@ -42,10 +53,11 @@ export function PetForm({
         {mode === "edit" && petId !== undefined && (
           <input type="hidden" name="petId" value={petId} />
         )}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div key={resultVersion} className="grid gap-4 sm:grid-cols-2">
           <FormField
             label="Name"
             name="name"
+            required
             error={errors.name}
             className="sm:col-span-2"
           >
@@ -57,9 +69,16 @@ export function PetForm({
               error={errors.name}
             />
           </FormField>
-          <FormField label="Species" name="speciesId" error={errors.speciesId}>
+          <FormField
+            label="Species"
+            name="speciesId"
+            required
+            error={errors.speciesId}
+          >
             <Select
               name="speciesId"
+              required
+              aria-required
               defaultValue={values.speciesId}
               error={errors.speciesId}
             >
@@ -109,6 +128,7 @@ export function PetForm({
             <Input
               name="dateOfBirth"
               type="date"
+              max={today}
               defaultValue={values.dateOfBirth}
               error={errors.dateOfBirth}
               hint="Leave blank if unknown."
@@ -118,13 +138,16 @@ export function PetForm({
             label="Microchip number"
             name="microchipId"
             error={errors.microchipId}
+            hint="Usually 15 digits. Spaces and dashes are fine."
           >
             <Input
               name="microchipId"
-              maxLength={50}
+              inputMode="numeric"
+              maxLength={25}
               autoComplete="off"
               defaultValue={values.microchipId}
               error={errors.microchipId}
+              hint="Usually 15 digits. Spaces and dashes are fine."
             />
           </FormField>
           <FormField

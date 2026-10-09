@@ -580,6 +580,15 @@ test("getPetCare status is up to date with no due items", async () => {
   expect(care.nextBeyond?.title).toBe("Far");
 });
 
+test("getPetCare status is null when no record carries a due date", async () => {
+  await addRecord(milo, condition("Pollen", "allergy"));
+
+  const care = await petCare(milo);
+  expect(care.dueItems).toEqual([]);
+  expect(care.nextBeyond).toBeNull();
+  expect(care.status).toBeNull();
+});
+
 test("getPetCare conditions exclude ended ones and sort allergies first, then severity", async () => {
   await addRecord(milo, condition("Arthritis", "condition", "severe"));
   await addRecord(milo, condition("Pollen", "allergy"));

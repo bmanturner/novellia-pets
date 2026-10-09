@@ -3,7 +3,14 @@ import { ZodError } from "zod";
 import { db } from "@/db";
 import { getCurrentHouseholdId } from "./household";
 import { createMedicalRecord } from "./medical-record";
-import { createPet, deletePet, getPet, listPets, updatePet } from "./pet";
+import {
+  createPet,
+  deletePet,
+  getPet,
+  listPets,
+  PetInputSchema,
+  updatePet,
+} from "./pet";
 
 let householdId: number;
 const otherHouseholdId = 2;
@@ -87,6 +94,29 @@ test("createPet rejects a blank name", async () => {
   await expect(
     createPet(householdId, { name: "  ", speciesId: "dog" }),
   ).rejects.toThrow(ZodError);
+});
+
+test("microchip numbers are normalized to digits and validated", () => {
+  const parse = (microchipId: string | null | undefined) =>
+    PetInputSchema.safeParse({ name: "Milo", speciesId: "dog", microchipId });
+
+  expect(parse("985 141 000 987 612").data?.microchipId).toBe(
+    "985141000987612",
+  );
+  expect(parse("985-141.000 123451").data?.microchipId).toBe("985141000123451");
+  expect(parse("  ").data?.microchipId).toBeNull();
+  expect(parse(undefined).data?.microchipId).toBeNull();
+
+  for (const bad of [
+    "abc!!",
+    "12345678",
+    "1234567890123456",
+    "985 141 x00 987",
+  ]) {
+    const result = parse(bad);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["microchipId"]);
+  }
 });
 
 test("deletePet removes the pet's medical records", async () => {

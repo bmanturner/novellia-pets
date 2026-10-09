@@ -19,7 +19,7 @@ export const LABEL_CLASS =
   "text-[11px] leading-4 font-semibold tracking-[0.08em] text-ink-muted uppercase";
 
 const CONTROL_CLASS =
-  "w-full rounded-md border border-rule bg-page px-3 text-[15px] hover:border-rule-strong focus-visible:border-focus aria-[invalid=true]:border-danger";
+  "w-full rounded-md border border-rule bg-page px-3 text-[15px] placeholder:text-ink-muted hover:border-rule-strong focus-visible:border-focus aria-[invalid=true]:border-danger";
 
 const SECONDARY_BUTTON =
   "inline-flex h-10 items-center gap-2 rounded-md border border-cover/25 bg-page px-3.5 text-[14px] font-semibold text-cover transition-colors duration-150 hover:border-cover/50 hover:bg-page-tint";
@@ -66,7 +66,12 @@ export function ScopedForm({
   }, [errors]);
 
   return (
-    <form ref={ref} action={action} className="flex min-h-0 flex-1 flex-col">
+    <form
+      ref={ref}
+      action={action}
+      noValidate
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <FieldScopeContext value={scope}>{children}</FieldScopeContext>
     </form>
   );
@@ -90,6 +95,7 @@ export function FormField({
   name,
   error,
   hint,
+  required,
   className = "",
   children,
 }: {
@@ -97,6 +103,8 @@ export function FormField({
   name: string;
   error?: string;
   hint?: string;
+  /** Shows a "Required" cue by the label. */
+  required?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -105,6 +113,11 @@ export function FormField({
     <div className={`min-w-0 ${className}`}>
       <label htmlFor={id} className={`mb-1 block ${LABEL_CLASS}`}>
         {label}
+        {required && (
+          <span className="ml-1.5 font-medium tracking-normal normal-case">
+            Required
+          </span>
+        )}
       </label>
       {children}
       {hint && (
@@ -218,15 +231,15 @@ export function DateShortcuts({
   }
 
   return (
-    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[13px]">
+    <div className="-mt-0.5 flex flex-wrap gap-x-2 text-[13px]">
       {options.map((option) => (
         <button
           key={option.months}
           type="button"
           onClick={(event) => pick(event.currentTarget, option.months)}
-          className="rounded-sm font-semibold text-cover underline decoration-cover/40 underline-offset-2 transition-colors duration-150 hover:decoration-cover"
+          className="-mx-1 inline-flex min-h-10 items-center rounded-sm px-1 font-semibold text-cover transition-colors duration-150 hover:text-cover-deep sm:min-h-8 [&>span:first-child]:underline [&>span:first-child]:decoration-cover/40 [&>span:first-child]:underline-offset-2 hover:[&>span:first-child]:decoration-cover"
         >
-          {option.label}
+          <span>{option.label}</span>
           <span className="sr-only">
             : set {label.toLowerCase()} to {spanOf(option.months)} after{" "}
             {from ? from.label.toLowerCase() : "today"}

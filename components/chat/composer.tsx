@@ -36,7 +36,9 @@ export function Composer({
   }, [draft, open]);
 
   useEffect(() => {
-    if (open) innerRef.current?.focus();
+    if (!open) return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+    innerRef.current?.focus();
   }, [open]);
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -83,7 +85,7 @@ export function Composer({
                 <button
                   type="button"
                   onClick={onDismissPet}
-                  className="grid size-6 shrink-0 place-items-center rounded text-ink-muted transition-colors duration-150 hover:bg-cover/10 hover:text-cover"
+                  className="relative grid size-6 shrink-0 place-items-center rounded text-ink-muted transition-colors duration-150 before:absolute before:-inset-2.5 before:content-[''] not-pointer-coarse:before:hidden hover:bg-cover/10 hover:text-cover"
                 >
                   <X aria-hidden className="size-3.5" />
                   <span className="sr-only">
@@ -99,7 +101,7 @@ export function Composer({
             <button
               type="button"
               onClick={onStop}
-              className="grid size-8 shrink-0 place-items-center rounded-md border border-cover/25 bg-page text-cover transition-colors duration-150 hover:border-cover/50 hover:bg-page-tint"
+              className="relative grid size-8 shrink-0 place-items-center rounded-md border border-cover/25 bg-page text-cover transition-colors duration-150 before:absolute before:-inset-1.5 before:content-[''] not-pointer-coarse:before:hidden hover:border-cover/50 hover:bg-page-tint"
             >
               <Square aria-hidden className="size-4" />
               <span className="sr-only">Stop</span>
@@ -108,7 +110,7 @@ export function Composer({
             <button
               type="submit"
               disabled={!canSend}
-              className="grid size-8 shrink-0 place-items-center rounded-md bg-cover text-cover-ink transition-colors duration-150 hover:bg-cover-deep disabled:cursor-not-allowed disabled:opacity-50"
+              className="relative grid size-8 shrink-0 place-items-center rounded-md bg-cover text-cover-ink transition-colors duration-150 before:absolute before:-inset-1.5 before:content-[''] not-pointer-coarse:before:hidden hover:bg-cover-deep disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ArrowUp aria-hidden className="size-4" />
               <span className="sr-only">Send</span>

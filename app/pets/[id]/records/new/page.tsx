@@ -1,6 +1,10 @@
 import { Suspense } from "react";
 import { FormPage } from "@/components/form-page";
-import { FormSkeleton, NewRecordScreen } from "@/components/forms/screens";
+import {
+  FormSkeleton,
+  NewRecordFrame,
+  NewRecordScreen,
+} from "@/components/forms/screens";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -9,10 +13,18 @@ type Props = {
 
 export default function NewRecordPage({ params, searchParams }: Props) {
   return (
-    <FormPage title="Add record">
-      <Suspense fallback={<FormSkeleton />}>
-        <NewRecordScreen params={params} searchParams={searchParams} />
-      </Suspense>
-    </FormPage>
+    <Suspense
+      fallback={
+        <FormPage title="Record">
+          <FormSkeleton />
+        </FormPage>
+      }
+    >
+      <NewRecordFrame variant="page" searchParams={searchParams}>
+        <Suspense fallback={<FormSkeleton />}>
+          <NewRecordScreen params={params} searchParams={searchParams} />
+        </Suspense>
+      </NewRecordFrame>
+    </Suspense>
   );
 }

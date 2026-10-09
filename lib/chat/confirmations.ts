@@ -1,13 +1,14 @@
 import type { PetsUIMessage } from "@/lib/chat/agent";
+import type { ConfirmationData } from "@/lib/chat/contract";
 
-/** The server-streamed confirmation sentence for a pending mutation. */
-export function findConfirmText(
+/** The server-streamed description of a pending mutation. */
+export function findConfirmation(
   message: PetsUIMessage,
   toolCallId: string,
-): string | undefined {
+): ConfirmationData | undefined {
   for (const part of message.parts) {
     if (part.type === "data-confirm" && part.id === toolCallId) {
-      return part.data.text;
+      return part.data;
     }
   }
   return undefined;

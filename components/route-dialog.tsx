@@ -2,7 +2,14 @@
 
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createContext, useEffect, useId, useRef } from "react";
+import {
+  createContext,
+  Fragment,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 
 /** Closes the surrounding route dialog; `null` outside of one. */
 export const DialogCloseContext = createContext<(() => void) | null>(null);
@@ -30,12 +37,24 @@ export function RouteDialog({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
-  // Next keeps visited routes mounted but hidden, which runs effect cleanups;
-  // closing here releases the modal's inert page and scroll lock.
+  // Bumped each time a hidden dialog is revealed again, so that open mounts its
+  // children fresh instead of resurfacing the previous visit's form state.
+  const [visit, setVisit] = useState(0);
+  const mounted = useRef(false);
+
+  // Next keeps visited routes mounted but hidden, which runs effect cleanups
+  // (and re-runs setup on reveal); closing here releases the modal's inert page
+  // and scroll lock. State is only updated in setup, never in cleanup.
   useEffect(() => {
     const dialog = ref.current;
     if (dialog && !dialog.open) dialog.showModal();
-    return () => dialog?.close();
+    // Skip the first mount (children are already fresh); any later setup is a
+    // reveal of a preserved route (or a StrictMode re-run, which is harmless).
+    if (mounted.current) setVisit((count) => count + 1);
+    mounted.current = true;
+    return () => {
+      dialog?.close();
+    };
   }, []);
 
   const close = () => router.back();
@@ -61,12 +80,14 @@ export function RouteDialog({
           type="button"
           onClick={close}
           aria-label="Close"
-          className="grid size-8 place-items-center rounded-md text-ink-muted hover:bg-page-tint hover:text-ink"
+          className="relative grid size-8 place-items-center rounded-md text-ink-muted before:absolute before:-inset-1.5 before:content-[''] hover:bg-page-tint hover:text-ink sm:before:hidden"
         >
           <X className="size-5" aria-hidden />
         </button>
       </div>
-      <DialogCloseContext value={close}>{children}</DialogCloseContext>
+      <DialogCloseContext value={close}>
+        <Fragment key={visit}>{children}</Fragment>
+      </DialogCloseContext>
     </dialog>
   );
 }

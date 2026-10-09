@@ -124,6 +124,11 @@ export const MedicalRecordInputSchema = z
         path: ["endedOn"],
         message: "End date can't be before the start date",
       });
+      ctx.addIssue({
+        code: "custom",
+        path: ["occurredOn"],
+        message: "Start date must be on or before the end date.",
+      });
     }
   });
 
@@ -183,6 +188,33 @@ export async function getMedicalRecord(
   const row = await recordsWithPet
     .where("pet.householdId", "=", householdId)
     .where("medicalRecord.id", "=", recordId)
+    .executeTakeFirst();
+  return row && toMedicalRecord(row);
+}
+
+/**
+ * The pet's newest record of `typeId` whose title matches `title` (ignoring
+ * case), for pre-filling the next dose or refill. Undated records rank last.
+ */
+export async function getLatestMedicalRecordByTitle(
+  householdId: number,
+  petId: number,
+  typeId: MedicalRecordTypeId,
+  title: string,
+): Promise<MedicalRecord | undefined> {
+  const row = await recordsWithPet
+    .where("pet.householdId", "=", householdId)
+    .where("medicalRecord.petId", "=", petId)
+    .where("medicalRecord.typeId", "=", typeId)
+    .where((eb) =>
+      eb(
+        eb.fn("lower", ["medicalRecord.title"]),
+        "=",
+        title.trim().toLowerCase(),
+      ),
+    )
+    .orderBy("medicalRecord.occurredOn", (ob) => ob.desc().nullsLast())
+    .orderBy("medicalRecord.id", "desc")
     .executeTakeFirst();
   return row && toMedicalRecord(row);
 }

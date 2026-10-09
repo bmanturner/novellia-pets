@@ -16,7 +16,9 @@ export default function PetTabsLayout({
       <Suspense fallback={<PetHeaderSkeleton />}>
         <PetHeaderSection params={params} />
       </Suspense>
-      <div className="mt-8">{children}</div>
+      {/* At least a screen tall, so switching to a shorter tab never forces
+          the browser to scroll up while the tabs are in view. */}
+      <div className="mt-8 min-h-svh">{children}</div>
     </main>
   );
 }

@@ -1,5 +1,9 @@
 import { Suspense } from "react";
-import { FormSkeleton, NewRecordScreen } from "@/components/forms/screens";
+import {
+  FormSkeleton,
+  NewRecordFrame,
+  NewRecordScreen,
+} from "@/components/forms/screens";
 import { RouteDialog } from "@/components/route-dialog";
 
 type Props = {
@@ -9,10 +13,18 @@ type Props = {
 
 export default function NewRecordModal({ params, searchParams }: Props) {
   return (
-    <RouteDialog title="Add record">
-      <Suspense fallback={<FormSkeleton />}>
-        <NewRecordScreen params={params} searchParams={searchParams} />
-      </Suspense>
-    </RouteDialog>
+    <Suspense
+      fallback={
+        <RouteDialog title="Record">
+          <FormSkeleton />
+        </RouteDialog>
+      }
+    >
+      <NewRecordFrame variant="dialog" searchParams={searchParams}>
+        <Suspense fallback={<FormSkeleton />}>
+          <NewRecordScreen params={params} searchParams={searchParams} />
+        </Suspense>
+      </NewRecordFrame>
+    </Suspense>
   );
 }

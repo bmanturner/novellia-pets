@@ -115,7 +115,7 @@ export function WalletCard({
                 Status as of {formatFullDate(today)}
               </p>
             </div>
-            <Stamp status={care.status} seed={pet.id} />
+            {care.status && <Stamp status={care.status} seed={pet.id} />}
           </div>
           <div className="shrink-0">
             <MicrochipStrip microchipId={pet.microchipId} />

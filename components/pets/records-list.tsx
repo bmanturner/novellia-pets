@@ -76,10 +76,10 @@ function RecordRow({
           </p>
         )}
       </div>
-      <div className="flex items-start gap-1 self-start">
+      <div className="flex items-start gap-2 self-start sm:gap-1">
         <Link
           href={routes.editRecord(petId, record.id, filters)}
-          className="inline-flex h-8 items-center rounded-md px-3 text-[13px] font-semibold text-cover hover:bg-page-tint"
+          className="inline-flex h-11 items-center rounded-md px-4 text-[13px] font-semibold text-cover hover:bg-page-tint sm:h-8 sm:px-3"
         >
           Edit
           <span className="sr-only"> {record.title}</span>
@@ -180,7 +180,7 @@ export async function PetRecords({
                     scroll={false}
                     aria-current={current ? "page" : undefined}
                     className={[
-                      "flex h-8 items-center gap-1.5 rounded-md px-3 text-[14px] whitespace-nowrap transition-colors duration-150",
+                      "flex h-11 items-center gap-1.5 rounded-md px-3 text-[14px] whitespace-nowrap transition-colors duration-150 sm:h-8",
                       current
                         ? "bg-cover font-semibold text-cover-ink"
                         : "text-ink hover:bg-page-tint",

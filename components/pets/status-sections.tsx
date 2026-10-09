@@ -5,11 +5,11 @@ import type {
   LatestVaccination,
 } from "@/db/models/care";
 import { Field } from "@/components/field";
+import { Stamp } from "@/components/stamp";
 import { formatDate } from "@/lib/format";
 
 const HEADING = "text-[22px] leading-7 font-bold tracking-[-0.01em]";
-const LIST =
-  "divide-y divide-rule rounded-xl border border-rule bg-page";
+const LIST = "divide-y divide-rule rounded-xl border border-rule bg-page";
 const ROW = "px-4 py-4 sm:px-5";
 const SMALL_CAPS =
   "text-[11px] leading-4 font-semibold tracking-[0.08em] text-ink-muted uppercase";
@@ -81,7 +81,7 @@ export function Conditions({ conditions }: { conditions: ActiveCondition[] }) {
           ))}
         </ul>
       ) : (
-        <EmptyCard>None on file.</EmptyCard>
+        <EmptyCard>No allergies or conditions recorded.</EmptyCard>
       )}
     </section>
   );
@@ -150,7 +150,7 @@ export function Medications({
           })}
         </ul>
       ) : (
-        <EmptyCard>No current medications.</EmptyCard>
+        <EmptyCard>No current medications recorded.</EmptyCard>
       )}
     </section>
   );
@@ -186,7 +186,13 @@ export function Vaccinations({
                   {vaccination.clinic && ` · ${vaccination.clinic}`}
                 </p>
               </div>
-              <div className="shrink-0 text-right">
+              <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                {vaccination.status && vaccination.status !== "up-to-date" && (
+                  <Stamp
+                    status={vaccination.status}
+                    seed={vaccination.recordId}
+                  />
+                )}
                 {vaccination.dueOn ? (
                   <>
                     <p className={SMALL_CAPS}>
@@ -208,7 +214,7 @@ export function Vaccinations({
           ))}
         </ul>
       ) : (
-        <EmptyCard>No vaccinations on file.</EmptyCard>
+        <EmptyCard>No vaccinations recorded.</EmptyCard>
       )}
     </section>
   );
@@ -249,7 +255,7 @@ export function LastVisitCard({
           )}
         </div>
       ) : (
-        <EmptyCard>No vet visits on file.</EmptyCard>
+        <EmptyCard>No vet visits recorded.</EmptyCard>
       )}
     </section>
   );

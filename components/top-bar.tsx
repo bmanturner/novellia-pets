@@ -1,6 +1,8 @@
-import { PawPrint, Plus } from "lucide-react";
+import { PawPrint } from "lucide-react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { AskButton } from "@/components/chat/ask-button";
+import { AddPetLink, TopBarAddPet } from "@/components/top-bar-add-pet";
 import { routes } from "@/lib/routes";
 
 export function TopBar({ chat }: { chat: boolean }) {
@@ -22,13 +24,9 @@ export function TopBar({ chat }: { chat: boolean }) {
         </Link>
         <div className="flex items-center gap-2 sm:gap-3">
           {chat && <AskButton />}
-          <Link
-            href={routes.newPet}
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-cover-ink px-3.5 text-[14px] font-semibold whitespace-nowrap text-cover transition-colors duration-150 hover:bg-white focus-visible:outline-foil"
-          >
-            <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-            Add pet
-          </Link>
+          <Suspense fallback={<AddPetLink />}>
+            <TopBarAddPet />
+          </Suspense>
         </div>
       </div>
     </header>

@@ -2,16 +2,22 @@
 
 import {
   Check,
+  ChevronDown,
   CircleAlert,
   CornerDownRight,
   LoaderCircle,
 } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import type { PetsUIMessage } from "@/lib/chat/agent";
-import { findConfirmText } from "@/lib/chat/confirmations";
-import { MUTATION_TOOLS, type CitedRecord } from "@/lib/chat/contract";
+import { findConfirmation } from "@/lib/chat/confirmations";
+import {
+  MUTATION_TOOLS,
+  type CitedRecord,
+  type ConfirmField,
+} from "@/lib/chat/contract";
 import { usePetsChat } from "@/lib/chat/chat-provider";
-import { formatDate } from "@/lib/format";
+import { formatFullDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { asRecord } from "./pet-names";
 
@@ -165,8 +171,12 @@ export function NavigatedLine({
   if (!href) return null;
   const label = navigatedLabel(part.input, petName) ?? "the page";
   return (
-    <p className="flex items-start gap-2 text-[13px] text-ink-muted">
-      <CornerDownRight aria-hidden size={14} className="mt-[3px] shrink-0" />
+    <p className="flex items-start gap-2 text-sm font-medium text-ink">
+      <CornerDownRight
+        aria-hidden
+        size={14}
+        className="mt-[3px] shrink-0 text-cover"
+      />
       <span>
         Opened{" "}
         <Link href={href} className={LINK_CLASS}>
@@ -204,28 +214,130 @@ const PROGRESS: Record<Verb, string> = {
 };
 
 const BUTTON =
-  "inline-flex h-8 items-center justify-center rounded-md px-3 text-[13px] font-semibold transition-colors duration-150";
+  "inline-flex h-8 items-center justify-center rounded-md px-3 text-[13px] font-semibold transition-colors duration-150 pointer-coarse:h-11 pointer-coarse:px-4";
 const PRIMARY = `${BUTTON} bg-cover text-cover-ink hover:bg-cover-deep`;
 const DANGER = `${BUTTON} bg-danger text-page hover:opacity-90`;
 const SECONDARY = `${BUTTON} border border-cover/25 bg-page text-cover hover:border-cover/50 hover:bg-page-tint`;
 
+function shortTitle(value: unknown): string | undefined {
+  const title = str(value);
+  return title && title.length <= 24 ? title : undefined;
+}
+
 function confirmLabel(
   tool: MutationName,
-  petId: number | undefined,
+  rawInput: unknown,
   petName: PetName,
 ): string {
-  switch (VERB[tool]) {
-    case "add":
-      return "Add";
-    case "save":
-      return "Save changes";
-    case "delete":
-      if (tool === "deletePet") {
-        const name = petName(petId);
-        return name ? `Delete ${name}` : "Delete pet";
+  const input = asRecord(rawInput);
+  switch (tool) {
+    case "createPet": {
+      const name = shortTitle(input?.name);
+      return name ? `Add ${name}` : "Add pet";
+    }
+    case "updatePet": {
+      const name = petName(num(input?.petId));
+      return name ? `Save ${name}` : "Save pet";
+    }
+    case "deletePet": {
+      const name = petName(num(input?.petId));
+      return name ? `Delete ${name}` : "Delete pet";
+    }
+    case "createMedicalRecord": {
+      const record = asRecord(input?.record);
+      switch (record?.typeId) {
+        case "vaccination":
+          return "Add vaccination";
+        case "medication":
+          return "Add medication";
+        case "visit":
+          return "Add vet visit";
+        case "condition":
+          return asRecord(record.details)?.kind === "allergy"
+            ? "Add allergy"
+            : "Add condition";
+        default:
+          return "Add record";
       }
+    }
+    case "updateMedicalRecord": {
+      const title = shortTitle(asRecord(input?.record)?.title);
+      return title ? `Save ${title}` : "Save record";
+    }
+    case "deleteMedicalRecord":
       return "Delete record";
   }
+}
+
+/** Approval ids already focused, so a re-render or remount never steals focus twice. */
+const focusedApprovals = new Set<string>();
+
+function ConfirmBox({
+  approvalId,
+  sentenceId,
+  sentence,
+  fields,
+  destructive,
+  label,
+  respond,
+}: {
+  approvalId: string;
+  sentenceId: string;
+  sentence: ReactNode;
+  fields: ConfirmField[];
+  destructive: boolean;
+  label: string;
+  respond: (approved: boolean) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (focusedApprovals.has(approvalId)) return;
+    focusedApprovals.add(approvalId);
+    ref.current?.focus({ preventScroll: false });
+  }, [approvalId]);
+
+  return (
+    <div
+      ref={ref}
+      role="group"
+      tabIndex={-1}
+      aria-labelledby={sentenceId}
+      className="rounded-lg border border-rule bg-page-tint p-3 outline-none focus-visible:ring-2 focus-visible:ring-cover/40"
+    >
+      {sentence}
+      {fields.length > 0 && (
+        <dl className="mt-2 grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-x-4">
+          {fields.map((field, index) => (
+            <div
+              key={`${field.label}-${index}`}
+              className="border-t border-rule py-2"
+            >
+              <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                {field.label}
+              </dt>
+              <dd className="mt-0.5 text-sm text-ink">{field.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          className={destructive ? DANGER : PRIMARY}
+          onClick={() => respond(true)}
+        >
+          {label}
+        </button>
+        <button
+          type="button"
+          className={SECONDARY}
+          onClick={() => respond(false)}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function ViewLink({ href }: { href: string }) {
@@ -309,38 +421,30 @@ export function MutationLine({
 }) {
   const { addToolApprovalResponse } = usePetsChat();
   const verb = VERB[tool];
+  const confirmation = findConfirmation(message, part.toolCallId);
+  const sentenceText = confirmation?.text ?? FALLBACK_CONFIRM[tool];
   const sentence = (
-    <p className="text-[15px] leading-6 text-ink">
-      {findConfirmText(message, part.toolCallId) ?? FALLBACK_CONFIRM[tool]}
+    <p
+      id={`confirm-${part.toolCallId}`}
+      className="text-[15px] leading-6 text-ink"
+    >
+      {sentenceText}
     </p>
   );
 
   if (part.state === "approval-requested" && part.approvalId) {
-    const id = part.approvalId;
-    const destructive = verb === "delete";
-    const petId = num(asRecord(part.input)?.petId);
     return (
-      <div className="rounded-lg border border-rule bg-page-tint p-3">
-        {sentence}
-        <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            className={destructive ? DANGER : PRIMARY}
-            onClick={() => void addToolApprovalResponse({ id, approved: true })}
-          >
-            {confirmLabel(tool, petId, petName)}
-          </button>
-          <button
-            type="button"
-            className={SECONDARY}
-            onClick={() =>
-              void addToolApprovalResponse({ id, approved: false })
-            }
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
+      <ConfirmBox
+        approvalId={part.approvalId}
+        sentenceId={`confirm-${part.toolCallId}`}
+        sentence={sentence}
+        fields={confirmation?.fields ?? []}
+        destructive={verb === "delete"}
+        label={confirmLabel(tool, part.input, petName)}
+        respond={(approved) =>
+          void addToolApprovalResponse({ id: part.approvalId!, approved })
+        }
+      />
     );
   }
 
@@ -377,7 +481,8 @@ export function MutationLine({
           className="mt-[3px] shrink-0 text-danger"
         />
         <span>
-          Couldn&apos;t {verb} that. {part.errorText}
+          Couldn&apos;t {verb} that. Nothing changed. You can ask again or use
+          the form.
         </span>
       </p>
     );
@@ -406,13 +511,12 @@ const TYPE_LABEL: Record<CitedRecord["typeId"], string> = {
   visit: "Vet visit",
   condition: "Allergy or condition",
 };
-
-function localToday(): string {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
-}
+const DATE_VERB: Record<CitedRecord["typeId"], string> = {
+  vaccination: "Given",
+  medication: "Started",
+  visit: "Visited",
+  condition: "Noted",
+};
 
 function readCited(value: unknown): CitedRecord | null {
   const r = asRecord(value);
@@ -457,38 +561,107 @@ export function collectCitations(message: PetsUIMessage): CitedRecord[] {
   return records;
 }
 
-export function Citations({ records }: { records: CitedRecord[] }) {
-  if (records.length === 0) return null;
-  const today = localToday();
+const CITATION_LIMIT = 5;
+
+function CitationLink({
+  record,
+  showPet,
+}: {
+  record: CitedRecord;
+  showPet: boolean;
+}) {
+  const detail = [
+    showPet ? record.petName : null,
+    TYPE_LABEL[record.typeId],
+    record.occurredOn
+      ? `${DATE_VERB[record.typeId]} ${formatFullDate(record.occurredOn)}`
+      : null,
+  ].filter(Boolean);
   return (
-    <section className="mt-3 border-t border-rule pt-3">
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
+    <li>
+      <Link
+        href={routes.petRecord(record.petId, record.id)}
+        className="group block"
+      >
+        <span className="block text-sm font-semibold text-cover underline decoration-cover underline-offset-2 group-hover:decoration-2">
+          {record.title}
+        </span>
+        <span className="block text-[13px] text-ink-muted">
+          {detail.join(" · ")}
+        </span>
+      </Link>
+    </li>
+  );
+}
+
+export function Citations({ records }: { records: CitedRecord[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const listId = useId();
+  if (records.length === 0) return null;
+
+  const visible = expanded ? records : records.slice(0, CITATION_LIMIT);
+  const hidden = records.length - visible.length;
+  const multiPet = new Set(records.map((r) => r.petId)).size > 1;
+
+  const groups: { petId: number; name: string; items: CitedRecord[] }[] = [];
+  if (multiPet) {
+    for (const record of visible) {
+      let group = groups.find((g) => g.petId === record.petId);
+      if (!group) {
+        group = { petId: record.petId, name: record.petName, items: [] };
+        groups.push(group);
+      }
+      group.items.push(record);
+    }
+  }
+
+  return (
+    <details className="group mt-3 border-t border-rule pt-3">
+      <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-sm text-[11px] font-semibold tracking-[0.08em] text-ink-muted uppercase transition-colors duration-150 hover:text-ink pointer-coarse:min-h-11 [&::-webkit-details-marker]:hidden">
         From records
-      </h3>
-      <ul className="mt-2 space-y-2">
-        {records.map((record) => {
-          const detail = [
-            record.petName,
-            TYPE_LABEL[record.typeId],
-            record.occurredOn ? formatDate(record.occurredOn, today) : null,
-          ].filter(Boolean);
-          return (
-            <li key={record.id}>
-              <Link
-                href={routes.petRecord(record.petId, record.id)}
-                className="group block"
-              >
-                <span className="block text-sm font-semibold text-cover underline decoration-cover/40 underline-offset-2 group-hover:decoration-cover">
-                  {record.title}
-                </span>
-                <span className="block text-[13px] text-ink-muted">
-                  {detail.join(" · ")}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+        <span className="font-normal tracking-normal">{records.length}</span>
+        <ChevronDown
+          aria-hidden
+          className="size-3.5 shrink-0 transition-transform duration-150 group-open:rotate-180"
+        />
+      </summary>
+      <div id={listId}>
+        {multiPet ? (
+          groups.map((group) => (
+            <div key={group.petId} className="mt-3">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                {group.name || "Pet"}
+              </h4>
+              <ul className="mt-1.5 space-y-2">
+                {group.items.map((record) => (
+                  <CitationLink
+                    key={record.id}
+                    record={record}
+                    showPet={false}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {visible.map((record) => (
+              <CitationLink key={record.id} record={record} showPet />
+            ))}
+          </ul>
+        )}
+      </div>
+      {records.length > CITATION_LIMIT && (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={listId}
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-3 text-[13px] font-semibold text-cover underline underline-offset-2"
+        >
+          {expanded ? "Show fewer" : `Show ${hidden} more`}
+        </button>
+      )}
+    </details>
   );
 }

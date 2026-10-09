@@ -6,6 +6,7 @@ import { createPet } from "@/db/models/pet";
 import {
   type AnyToolDef,
   allTools,
+  findNearTitle,
   type ToolContext,
   writeTools,
 } from "@/lib/tools/registry";
@@ -38,6 +39,28 @@ test("updatePet changes only the given fields", async () => {
   expect(await run(allTools.getPet, { petId: rex.id })).toMatchObject({
     pet: { name: "Rex", breed: "Basset", sex: "male", notes: "Shy" },
   });
+});
+
+test("createPet and updatePet apply the microchip rule", () => {
+  expect(
+    allTools.createPet.inputSchema.safeParse({
+      name: "X",
+      speciesId: "dog",
+      microchipId: "abc!!",
+    }).success,
+  ).toBe(false);
+  expect(
+    allTools.updatePet.inputSchema.safeParse({
+      petId: 1,
+      changes: { microchipId: "abc!!" },
+    }).success,
+  ).toBe(false);
+  expect(
+    allTools.updatePet.inputSchema.parse({
+      petId: 1,
+      changes: { microchipId: "985 141 000 987 612" },
+    }),
+  ).toMatchObject({ changes: { microchipId: "985141000987612" } });
 });
 
 test("updatePet clears a field set to null", async () => {
@@ -147,4 +170,57 @@ test("clearing a field is confirmed as a clear", async () => {
 
   expect(message).toMatch(/clear/i);
   expect(message).toContain("Rex");
+});
+
+test("findNearTitle only flags titles that nearly match an existing one", () => {
+  const existing = ["Rabies (1-year)", "Distemper"];
+  expect(findNearTitle(existing, "Rabies (1-year)")).toBeUndefined();
+  expect(findNearTitle(existing, "rabies (1-YEAR)")).toEqual({
+    title: "Rabies (1-year)",
+    sameItem: true,
+  });
+  expect(findNearTitle(existing, "Rabies")).toEqual({
+    title: "Rabies (1-year)",
+    sameItem: false,
+  });
+  expect(findNearTitle(["Rabies"], "Rabies (3-year)")?.title).toBe("Rabies");
+  expect(findNearTitle(existing, "Rabid")).toBeUndefined();
+  expect(findNearTitle(["Rabies"], "Rabiesx")).toBeUndefined();
+  expect(findNearTitle(existing, "Bordetella")).toBeUndefined();
+  expect(findNearTitle([], "Rabies")).toBeUndefined();
+});
+
+test("createMedicalRecord confirmation flags a near-duplicate title of the same type only", async () => {
+  const hooch = await createPet(ctx.householdId, {
+    name: "Hooch",
+    speciesId: "dog",
+  });
+  await createMedicalRecord(ctx.householdId, hooch.id, {
+    typeId: "vaccination",
+    title: "Rabies (1-year)",
+    occurredOn: "2025-10-08",
+    dueOn: "2026-10-08",
+    details: {},
+  });
+  const fields = (typeId: "vaccination" | "medication") =>
+    writeTools.createMedicalRecord.confirmFields(
+      ctx,
+      writeTools.createMedicalRecord.inputSchema.parse({
+        petId: hooch.id,
+        record: {
+          typeId,
+          title: "Rabies",
+          occurredOn: "2026-10-08",
+          details: {},
+        },
+      }),
+    );
+
+  expect(await fields("vaccination")).toContainEqual({
+    label: "Existing item",
+    value: "Rabies (1-year): this won't replace its due date",
+  });
+  expect(await fields("medication")).not.toContainEqual(
+    expect.objectContaining({ label: "Existing item" }),
+  );
 });

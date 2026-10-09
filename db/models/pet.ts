@@ -7,6 +7,23 @@ import { nowIso, nullableDate, nullableText } from "./shared";
 export const PET_SEXES = ["female", "male", "unknown"] as const;
 export type PetSex = (typeof PET_SEXES)[number];
 
+/**
+ * Optional microchip number: blank becomes `null`; spaces, dashes and dots are
+ * stripped and the rest must be 9 to 15 digits, stored as digits only.
+ */
+export const microchipSchema = z
+  .string()
+  .trim()
+  .max(50)
+  .nullish()
+  .transform((value) => (value ? value.replace(/[\s.-]/g, "") : null))
+  .pipe(
+    z
+      .string()
+      .regex(/^\d{9,15}$/, "Enter 9 to 15 digits. Spaces and dashes are fine.")
+      .nullable(),
+  );
+
 export const PetInputSchema = z.object({
   name: z.string().trim().min(1).max(100),
   speciesId: z.string().min(1),
@@ -17,7 +34,7 @@ export const PetInputSchema = z.object({
     .nullish()
     .transform((value) => value ?? null),
   dateOfBirth: nullableDate,
-  microchipId: nullableText(50),
+  microchipId: microchipSchema,
   notes: nullableText(2000),
 });
 

@@ -9,9 +9,12 @@ export function HeaderStamp({
   status,
   seed,
 }: {
-  status: CareStatus;
+  status: CareStatus | null;
   seed: number;
 }) {
   const inked = useSearchParams().has("logged");
+  if (!status) {
+    return <p className="text-[14px] text-ink-muted">No due dates on file</p>;
+  }
   return <InkableStamp status={status} petId={seed} inked={inked} />;
 }

@@ -127,6 +127,35 @@ test("an approved write runs", async () => {
   expect(await getPet(ctx.householdId, rex.id)).toBeUndefined();
 });
 
+test("an approved write announces the change right after its output", async () => {
+  const approvalId = await requestDelete();
+
+  const chunks = await chat(
+    [textStep("Deleted Rex.")],
+    answerApproval(approvalId, true),
+  );
+
+  const output = chunks.findIndex(
+    (c) => c.type === "tool-output-available" && c.toolCallId === "call-1",
+  );
+  expect(chunks[output + 1]).toEqual({
+    type: "data-changed",
+    data: { tool: "deletePet", petId: rex.id },
+    transient: true,
+  });
+});
+
+test("a denied write announces no change", async () => {
+  const approvalId = await requestDelete();
+
+  const chunks = await chat(
+    [textStep("Okay, kept Rex.")],
+    answerApproval(approvalId, false),
+  );
+
+  expect(chunks.some((c) => c.type === "data-changed")).toBe(false);
+});
+
 test("a denied write doesn't run", async () => {
   const approvalId = await requestDelete();
 
@@ -172,7 +201,7 @@ test("navigate is left for the browser to run", async () => {
   ).toBe(false);
 });
 
-test("an approval request carries the confirmation sentence", async () => {
+test("an approval request carries the confirmation sentence and fields", async () => {
   const chunks = await chat(
     [toolCallStep("call-1", "deletePet", { petId: rex.id })],
     [ask("Delete Rex")],
@@ -182,7 +211,10 @@ test("an approval request carries the confirmation sentence", async () => {
     expect.objectContaining({
       type: "data-confirm",
       id: "call-1",
-      data: { text: expect.stringContaining("Delete Rex") },
+      data: {
+        text: expect.stringContaining("Delete Rex"),
+        fields: [{ label: "Pet", value: "Rex" }],
+      },
     }),
   );
 });
